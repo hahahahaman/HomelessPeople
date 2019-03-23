@@ -1,132 +1,152 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import io from 'socket.io-client';
+import Phaser from 'phaser';
 
-import './index.css';
-import Whiteboard from './components/whiteboard';
+function preload() {
+  this.load.setBaseURL('../..');
+  this.load.image('sky', 'assets/sky.png');
+  this.load.image('ground', 'assets/platform.png');
+  this.load.image('star', 'assets/star.png');
+  this.load.image('bomb', 'assets/bomb.png');
+  this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 48 });
+}
 
-ReactDOM.render(<Whiteboard />, document.getElementById('root'));
+let player;
+let platforms;
+let cursors;
+let stars;
+let bombs;
 
-const socket = io();
-const canvas = document.getElementsByClassName('whiteboard')[0];
-const colors = document.getElementsByClassName('color');
-const context = canvas.getContext('2d');
+let score = 0;
+let scoreText;
+let gameOver = false;
 
-const current = {
-  color: 'black'
-};
-let drawing = false;
+function collectStar(playerCollided, star) {
+  star.disableBody(true, true);
 
-function drawLine(x0, y0, x1, y1, color, emit) {
-  context.beginPath();
-  context.moveTo(x0, y0);
-  context.lineTo(x1, y1);
-  context.strokeStyle = color;
-  context.lineWidth = 2;
-  context.stroke();
-  context.closePath();
+  score += 10;
+  scoreText.setText(`Score: ${score}`);
 
-  if (!emit) {
-    return;
+  if (stars.countActive(true) === 0) {
+    stars.children.iterate((child) => {
+      child.enableBody(true, child.x, 0, true, true); // params: reset(reset body and place at x,y), x, y, enableGameObject(activate game object), showGameObject
+    });
+
+    const x = player.x < 400 ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+    const bomb = bombs.create(x, 16, 'bomb'); // params: x,y,key,frame,visible,active
+    bomb.setBounce(1);
+    bomb.setCollideWorldBounds(true);
+    bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
   }
-  const w = canvas.width;
-  const h = canvas.height;
+}
 
-  socket.emit('drawing', {
-    x0: x0 / w,
-    y0: y0 / h,
-    x1: x1 / w,
-    y1: y1 / h,
-    color
+function hitBomb(playerCollided, bomb) {
+  this.physics.pause();
+
+  player.setTint(0xff0000);
+
+  player.anims.play('turn');
+
+  gameOver = true;
+}
+
+function create() {
+  this.add.image(400, 300, 'sky'); // game object's origin is always the center
+
+  platforms = this.physics.add.staticGroup(); // physics object that never moves
+
+  platforms
+    .create(400, 568, 'ground')
+    .setScale(2)
+    .refreshBody(); // refreshBody tells physics world it changed.
+
+  platforms.create(600, 400, 'ground');
+  platforms.create(50, 250, 'ground');
+  platforms.create(750, 220, 'ground');
+
+  player = this.physics.add.sprite(100, 450, 'dude');
+
+  player.setBounce(0.2); // after landing, player will bounce ever so slightly
+  player.setCollideWorldBounds(true); // world bounds, by default, is same as window bound
+
+  this.anims.create({
+    key: 'left',
+    frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+    frameRate: 10,
+    repeat: -1 // Tells the animation to repeat, -1
   });
+
+  this.anims.create({
+    key: 'turn',
+    frames: [{ key: 'dude', frame: 4 }],
+    frameRate: 20
+  });
+
+  this.anims.create({
+    key: 'right',
+    frames: this.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+    frameRate: 10,
+    repeat: -1
+  });
+
+  this.physics.add.collider(player, platforms);
+  cursors = this.input.keyboard.createCursorKeys();
+
+  stars = this.physics.add.group({
+    key: 'star', // sets texture to star image
+    repeat: 11, // creates 1 child by default + 11 repeat = 12 children
+    setXY: { x: 12, y: 0, stepX: 70 } // each child is create with +70 on x axis
+  });
+
+  stars.children.iterate((child) => {
+    child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+  });
+
+  this.physics.add.collider(stars, platforms);
+  this.physics.add.overlap(player, stars, collectStar, null, this); // params: object1, object2, callback if collided, additional checks for collision if collided, callbackContext
+
+  scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+
+  bombs = this.physics.add.group();
+  this.physics.add.collider(bombs, platforms);
+  this.physics.add.collider(player, bombs, hitBomb, null, this);
 }
 
-function onMouseDown(e) {
-  drawing = true;
-  current.x = e.clientX || e.touches[0].clientX;
-  current.y = e.clientY || e.touches[0].clientY;
-}
+function update() {
+  if (cursors.left.isDown) {
+    player.setVelocityX(-160);
 
-function onMouseUp(e) {
-  if (!drawing) {
-    return;
+    player.anims.play('left', true);
+  } else if (cursors.right.isDown) {
+    player.setVelocityX(160);
+
+    player.anims.play('right', true);
+  } else {
+    player.setVelocityX(0);
+
+    player.anims.play('turn');
   }
-  drawing = false;
-  drawLine(
-    current.x,
-    current.y,
-    e.clientX || e.touches[0].clientX,
-    e.clientY || e.touches[0].clientY,
-    current.color,
-    true
-  );
-}
 
-function onMouseMove(e) {
-  if (!drawing) {
-    return;
+  if (cursors.up.isDown && player.body.touching.down) {
+    player.setVelocityY(-330);
   }
-  drawLine(
-    current.x,
-    current.y,
-    e.clientX || e.touches[0].clientX,
-    e.clientY || e.touches[0].clientY,
-    current.color,
-    true
-  );
-  current.x = e.clientX || e.touches[0].clientX;
-  current.y = e.clientY || e.touches[0].clientY;
 }
 
-function onColorUpdate(e) {
-  current.color = e.target.className.split(' ')[1];
-}
-
-// limit the number of events per second
-function throttle(callback, delay) {
-  let previousCall = new Date().getTime();
-  return (e) => {
-    const time = new Date().getTime();
-
-    if (time - previousCall >= delay) {
-      previousCall = time;
-      callback(e);
+const config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  physics: {
+    default: 'arcade',
+    arcade: {
+      gravity: { y: 300 },
+      debug: false
     }
-  };
-}
+  },
+  scene: {
+    preload,
+    create,
+    update
+  }
+};
 
-function onDrawingEvent(data) {
-  const w = canvas.width;
-  const h = canvas.height;
-  drawLine(data.x0 * w, data.y0 * h, data.x1 * w, data.y1 * h, data.color);
-}
-
-// make the canvas fill its parent
-function onResize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-
-canvas.addEventListener('mousedown', onMouseDown, false);
-canvas.addEventListener('mouseup', onMouseUp, false);
-canvas.addEventListener('mouseout', onMouseUp, false);
-canvas.addEventListener('mousemove', throttle(onMouseMove, 10), false);
-
-// Touch support for mobile devices
-canvas.addEventListener('touchstart', onMouseDown, false);
-canvas.addEventListener('touchend', onMouseUp, false);
-canvas.addEventListener('touchcancel', onMouseUp, false);
-canvas.addEventListener('touchmove', throttle(onMouseMove, 10), false);
-
-for (let i = 0; i < colors.length; i++) {
-  colors[i].addEventListener('click', onColorUpdate, false);
-}
-
-socket.on('connect', () => {
-  console.log(`Client connected. ID: ${socket.id}`);
-});
-
-socket.on('drawing', onDrawingEvent);
-
-window.addEventListener('resize', onResize, false);
-onResize();
+const game = new Phaser.Game(config); // main process

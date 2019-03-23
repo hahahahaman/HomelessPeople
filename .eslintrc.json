@@ -11,6 +11,7 @@
     "comma-dangle": "off",
     "react/jsx-filename-extension": "off",
     "react/destructuring-assignment": "off",
-    "prefer-destructuring": "off"
+    "prefer-destructuring": "off",
+    "max-len": "off"
   }
 }
