@@ -9,7 +9,7 @@
     "client": "webpack-dev-server --mode development --devtool inline-source-map",
     "server": "nodemon src/server/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run client\""
   },
   "author": "Yellow Men",
   "license": "ISC",

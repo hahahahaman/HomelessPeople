@@ -1,14 +1,5 @@
 import Phaser from 'phaser';
 
-function preload() {
-  this.load.setBaseURL('../..');
-  this.load.image('sky', 'assets/sky.png');
-  this.load.image('ground', 'assets/platform.png');
-  this.load.image('star', 'assets/star.png');
-  this.load.image('bomb', 'assets/bomb.png');
-  this.load.spritesheet('dude', 'assets/dude.png', { frameWidth: 32, frameHeight: 48 });
-}
-
 let player;
 let platforms;
 let cursors;
@@ -19,7 +10,19 @@ let score = 0;
 let scoreText;
 let gameOver = false;
 
-function collectStar(playerCollided, star) {
+function preload() {
+  this.load.setBaseURL('../..');
+  this.load.image('sky', 'assets/sky.png');
+  this.load.image('ground', 'assets/platform.png');
+  this.load.image('star', 'assets/star.png');
+  this.load.image('bomb', 'assets/bomb.png');
+  this.load.spritesheet('dude', 'assets/dude.png', {
+    frameWidth: 32,
+    frameHeight: 48
+  });
+}
+
+function collectStar(playerObj, star) {
   star.disableBody(true, true);
 
   score += 10;
@@ -30,7 +33,9 @@ function collectStar(playerCollided, star) {
       child.enableBody(true, child.x, 0, true, true); // params: reset(reset body and place at x,y), x, y, enableGameObject(activate game object), showGameObject
     });
 
-    const x = player.x < 400 ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+    const x = playerObj.x < 400
+      ? Phaser.Math.Between(400, 800)
+      : Phaser.Math.Between(0, 400);
 
     const bomb = bombs.create(x, 16, 'bomb'); // params: x,y,key,frame,visible,active
     bomb.setBounce(1);
@@ -39,12 +44,12 @@ function collectStar(playerCollided, star) {
   }
 }
 
-function hitBomb(playerCollided, bomb) {
+function hitBomb(playerObj, bomb) {
   this.physics.pause();
 
-  player.setTint(0xff0000);
+  playerObj.setTint(0xff0000);
 
-  player.anims.play('turn');
+  playerObj.anims.play('turn');
 
   gameOver = true;
 }
@@ -104,7 +109,10 @@ function create() {
   this.physics.add.collider(stars, platforms);
   this.physics.add.overlap(player, stars, collectStar, null, this); // params: object1, object2, callback if collided, additional checks for collision if collided, callbackContext
 
-  scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+  scoreText = this.add.text(16, 16, 'score: 0', {
+    fontSize: '32px',
+    fill: '#000'
+  });
 
   bombs = this.physics.add.group();
   this.physics.add.collider(bombs, platforms);
