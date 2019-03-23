@@ -1,4 +1,4 @@
-# Homless People
+# Homeless People
 
 [repl.it Game jam](https://repl.it/talk/challenge/Were-hosting-a-Game-Jam/11432)
 
