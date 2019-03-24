@@ -1,7 +1,7 @@
 {
-  "name": "gape",
+  "name": "Homeless People",
   "version": "1.0.0",
-  "description": "Gape Explorer",
+  "description": "Homeless People robbing for money.",
   "main": "src/server/server.js",
   "scripts": {
     "build": "webpack --mode production",

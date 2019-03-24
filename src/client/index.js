@@ -3,13 +3,12 @@ import Phaser from 'phaser';
 
 const config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: 1440,
+  height: 800,
   physics: {
     default: 'arcade',
     arcade: {
-      gravity: { y: 0 },
-      debug: true
+      gravity: { y: 0 }
     }
   },
   scene: {
@@ -26,6 +25,8 @@ let cursors;
 let keys;
 let map;
 let text;
+let selectedUnit;
+let graphics;
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -40,19 +41,39 @@ function preload() {
   this.load.image('bg', 'assets/wallpaper.jpg');
 }
 
-function makeMap() {
-  map = new Array(10);
-  for (let i = 0; i < 10; i++) {
-    map[i] = new Array(10);
+function makeMap(n) {
+  map = new Array(n);
+  for (let i = 0; i < n; i++) {
+    map[i] = new Array(n);
+  }
+
+  const offset = 1000;
+  for (let i = 0; i < n + 1; i++) {
+    const line = new Phaser.Geom.Line(
+      offset + 50 * i,
+      offset,
+      offset + 50 * i,
+      offset + n * 50
+    );
+    graphics.strokeLineShape(line);
+  }
+
+  for (let j = 0; j < n + 1; j++) {
+    const line = new Phaser.Geom.Line(
+      offset,
+      offset + 50 * j,
+      offset + n * 50,
+      offset + 50 * j
+    );
+    graphics.strokeLineShape(line);
   }
 }
 
 function create() {
-  makeMap();
-
   this.cameras.main.setBounds(0, 0, 3840, 2160);
   this.physics.world.setBounds(0, 0, 3840, 2160);
   this.add.image(0, 0, 'bg').setOrigin(0);
+
   cursors = this.input.keyboard.createCursorKeys();
   keys = this.input.keyboard.addKeys('W,A,S,D');
 
@@ -60,18 +81,27 @@ function create() {
   player.setCollideWorldBounds(true);
   player.gridX = 0;
   player.gridY = 0;
-  this.cameras.main.centerOn(1920, 1080);
+  selectedUnit = player;
+  this.cameras.main.centerOn(1000, 1000);
 
   /*   this.cameras.main.startFollow(player, true, 0.4, 0.4); */
 
   text = this.add
     .text(10, 10, 'Cursors to move', { font: '16px Courier', fill: '#00ff00' })
     .setScrollFactor(0);
+
+  graphics = this.add.graphics({
+    lineStyle: { width: 3, color: 0xffffff, alpha: 0.8 }
+  });
+  makeMap(10);
 }
 
-const vel = 500;
+const vel = 1000;
 function update(time, delta) {
   const dt = delta / 1000;
+  const camera = this.cameras.main;
+
+  /*
   player.setVelocity(0);
   if (cursors.up.isDown) {
     player.setVelocityY(-vel);
@@ -85,7 +115,6 @@ function update(time, delta) {
     player.setVelocityX(vel);
   }
 
-  const camera = this.cameras.main;
   if (keys.W.isDown) {
     camera.scrollY -= vel * dt;
   } else if (keys.S.isDown) {
@@ -97,13 +126,15 @@ function update(time, delta) {
   } else if (keys.D.isDown) {
     camera.scrollX += vel * dt;
   }
+  */
 
-  const moveThreshold = 100;
+  const width = camera.width;
+  const height = camera.height;
+  const moveThresholdX = width / 6;
+  const moveThresholdY = height / 6;
   let shouldMove = false;
   const mouseX = this.input.x;
   const mouseY = this.input.y;
-  const width = camera.width;
-  const height = camera.height;
 
   const x = mouseX - width / 2;
   const y = mouseY - height / 2;
@@ -116,10 +147,10 @@ function update(time, delta) {
   const ratioX = distX / Math.pow(width / 2, golden);
   const ratioY = distY / Math.pow(height / 2, golden);
   if (
-    mouseX < moveThreshold
-    || mouseY < moveThreshold
-    || Math.abs(width - mouseX) < moveThreshold
-    || Math.abs(height - mouseY) < moveThreshold
+    mouseX < moveThresholdX
+    || mouseY < moveThresholdY
+    || Math.abs(width - mouseX) < moveThresholdX
+    || Math.abs(height - mouseY) < moveThresholdY
   ) {
     shouldMove = true;
     camera.scrollX += Math.cos(rad) * vel * ratioX * dt;
