@@ -1,3 +1,4 @@
+import './index.css';
 import Phaser from 'phaser';
 
 const config = {
@@ -42,23 +43,24 @@ function create() {
   this.add.image(0, 0, 'bg').setOrigin(0);
   cursors = this.input.keyboard.createCursorKeys();
 
-  player = this.physics.add.image(100, 100, 'dude');
+  player = this.physics.add.image(1920, 1080, 'dude');
   player.setCollideWorldBounds(true);
 
-  this.cameras.main.startFollow(player, true, 0.1, 0.1);
+  this.cameras.main.startFollow(player, true, 0.4, 0.4);
 }
 
+const vel = 300;
 function update() {
   player.setVelocity(0);
   if (cursors.up.isDown) {
-    player.setVelocityY(-300);
+    player.setVelocityY(-vel);
   } else if (cursors.down.isDown) {
-    player.setVelocityY(300);
+    player.setVelocityY(vel);
   }
 
   if (cursors.left.isDown) {
-    player.setVelocityX(-300);
+    player.setVelocityX(-vel);
   } else if (cursors.right.isDown) {
-    player.setVelocityX(300);
+    player.setVelocityX(vel);
   }
 }
