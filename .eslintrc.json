@@ -12,6 +12,7 @@
     "react/jsx-filename-extension": "off",
     "react/destructuring-assignment": "off",
     "prefer-destructuring": "off",
-    "max-len": "off"
+    "max-len": "off",
+    "no-use-before-define": "off"
   }
 }
