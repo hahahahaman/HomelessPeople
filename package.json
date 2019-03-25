@@ -1,5 +1,5 @@
 {
-  "name": "Homeless People",
+  "name": "HomelessPeople",
   "version": "1.0.0",
   "description": "Homeless People robbing for money.",
   "main": "src/server/server.js",

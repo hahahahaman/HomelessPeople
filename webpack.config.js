@@ -37,7 +37,6 @@ module.exports = {
     port: 3000,
     open: true,
     inline: true,
-    hot: true,
     proxy: {
       '/socket.io': {
         target: 'http://localhost:8080',
