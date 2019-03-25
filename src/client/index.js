@@ -3,7 +3,7 @@ import Phaser from 'phaser';
 
 const config = {
   type: Phaser.AUTO,
-  width: 1440,
+  width: 800,
   height: 800,
   physics: {
     default: 'arcade',
@@ -27,6 +27,7 @@ let map;
 let text;
 let selectedUnit;
 let graphics;
+const rects = [];
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -48,24 +49,17 @@ function makeMap(n) {
   }
 
   const offset = 1000;
-  for (let i = 0; i < n + 1; i++) {
-    const line = new Phaser.Geom.Line(
-      offset + 50 * i,
-      offset,
-      offset + 50 * i,
-      offset + n * 50
-    );
-    graphics.strokeLineShape(line);
-  }
-
-  for (let j = 0; j < n + 1; j++) {
-    const line = new Phaser.Geom.Line(
-      offset,
-      offset + 50 * j,
-      offset + n * 50,
-      offset + 50 * j
-    );
-    graphics.strokeLineShape(line);
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      /*       graphics.fillRoundedRect(offset + i * 50, offset + j * 50, 50, 50); */
+      const rect = new Phaser.Geom.Rectangle(
+        offset + i * 50,
+        offset + j * 50,
+        50,
+        50
+      );
+      rects.push(rect);
+    }
   }
 }
 
@@ -91,7 +85,8 @@ function create() {
     .setScrollFactor(0);
 
   graphics = this.add.graphics({
-    lineStyle: { width: 3, color: 0xffffff, alpha: 0.8 }
+    lineStyle: { width: 3, color: 0xffffff, alpha: 0.8 },
+    fillStyle: { color: 0x00ff00, alpha: 0.8 }
   });
   makeMap(10);
 }
@@ -127,6 +122,12 @@ function update(time, delta) {
     camera.scrollX += vel * dt;
   }
   */
+  graphics.clear();
+
+  for (let i = 0; i < rects.length; i++) {
+    graphics.strokeRectShape(rects[i]);
+    graphics.fillRectShape(rects[i]);
+  }
 
   const width = camera.width;
   const height = camera.height;
@@ -158,6 +159,7 @@ function update(time, delta) {
   }
 
   text.setText([
+    `fps: ${game.loop.actualFps}`,
     `screen x: ${this.input.x}`,
     `screen y: ${this.input.y}`,
     `world x: ${this.input.mousePointer.worldX}`,
