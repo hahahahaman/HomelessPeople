@@ -35,6 +35,7 @@ let cursors;
 let keys;
 let text;
 const entities = new Set();
+const drawFuncs = new Set();
 let selectedEntity;
 let graphics;
 let map;
@@ -57,23 +58,25 @@ function preload() {
   this.load.image('grass', 'assets/grass.jpg');
 }
 
-function makeMap(_this, n) {
-  map = new Array(n);
-  for (let i = 0; i < n; i++) {
-    map[i] = new Array(n);
-    for (let j = 0; j < n; j++) {
+function makeMap(_this, width = 10, height = 10) {
+  map = new Array(width);
+  for (let i = 0; i < width; i++) {
+    map[i] = new Array(height);
+    for (let j = 0; j < height; j++) {
       const tile = _this.add
         .sprite(offset + i * tileSize, offset + j * tileSize, 'grass')
         .setInteractive()
-        .on('pointerdown', (pointer) => {
+        .on('mouseDown', (pointer) => {
           if (pointer.rightButtonDown()) {
-            tile.setTint(0xff0000);
-            const playerGridX = player.data.get('gridX');
-            const playerGridY = player.data.get('gridY');
-            player.data
-              .set('movesX', i - playerGridX)
-              .set('movesY', j - playerGridY)
-              .set('state', STATE.MOVE);
+            tile.setTint(0xaa0000);
+            const moveTo = {
+              state: STATE.MOVE,
+              elapsed: 0.0,
+              done: selectedEntity.getData('moveSpeed'),
+              x: i,
+              y: j
+            };
+            selectedEntity.getData('actionsDeque').push(moveTo);
           }
         })
         .on('pointerup', () => {
@@ -89,18 +92,33 @@ function makeMap(_this, n) {
       map[i][j] = tile;
     }
   }
+}
 
-  /*   for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      const rect = new Phaser.Geom.Rectangle(
-        offset + i * tileSize,
-        offset + j * tileSize,
-        tileSize,
-        tileSize
-      );
-      rects.push(rect);
+function disableMap() {
+  for (let i = 0; i < map.length; i++) {
+    for (let j = 0; j < map[i].length; j++) {
+      map[i][j].disableInteractive();
     }
-  } */
+  }
+}
+
+function enableMap() {
+  for (let i = 0; i < map.length; i++) {
+    for (let j = 0; j < map[i].length; j++) {
+      map[i][j].setInteractive();
+    }
+  }
+}
+function disableEntities() {
+  entities.forEach((entity) => {
+    entity.disableInteractive();
+  });
+}
+
+function enableEntities() {
+  entities.forEach((entity) => {
+    entity.setInteractive();
+  });
 }
 
 function grid2world(val) {
@@ -115,7 +133,7 @@ function setEntityData(
     moveSpeed = 0.5,
     state = STATE.IDLE,
     actionsDeque = new Deque()
-  }
+  } = {}
 ) {
   obj.setDataEnabled();
   obj.data
@@ -137,7 +155,6 @@ function setEntityData(
 }
 
 function create() {
-  console.log(this);
   // stop the right click menu from popping up
   this.input.mouse.disableContextMenu();
 
@@ -150,8 +167,12 @@ function create() {
     paused = !paused;
     if (paused) {
       this.cameras.main.setAlpha(0.8);
+      disableMap();
+      disableEntities();
     } else {
       this.cameras.main.setAlpha(1);
+      enableMap();
+      enableEntities();
     }
   });
 
@@ -183,7 +204,7 @@ function create() {
   this.input.on(
     'gameobjectover',
     (pointer, gameObject) => {
-      gameObject.emit('mouseOver', gameObject);
+      gameObject.emit('mouseOver', pointer);
     },
     this
   );
@@ -207,7 +228,7 @@ function create() {
 
   player = this.add.sprite(1920, 1080, 'dude');
   player.setInteractive();
-  setEntityData(player, {});
+  setEntityData(player);
   function selectEntity(entity) {
     selectedEntity = entity;
   }
@@ -215,6 +236,16 @@ function create() {
     if (pointer.leftButtonDown()) {
       selectEntity(player);
     }
+  });
+  function mouseOverPlayer() {
+    graphics.lineStyle(2, 0x11aa11, 0.5);
+    graphics.strokeCircle(player.x, player.y, tileSize / 2);
+  }
+  player.on('mouseOver', (pointer) => {
+    drawFuncs.add(mouseOverPlayer);
+  });
+  player.on('mouseOut', (pointer) => {
+    drawFuncs.delete(mouseOverPlayer);
   });
   player2 = this.add.sprite(0, 0, 'dude');
   player2.setInteractive();
@@ -226,6 +257,7 @@ function create() {
   });
 
   entities.add(player);
+  entities.add(player2);
 
   selectedEntity = player;
 
@@ -277,96 +309,82 @@ function update(time, delta) {
   const dt = delta / 1000;
   const camera = this.cameras.main;
 
-  /*
-  player.setVelocity(0);
-  if (cursors.up.isDown) {
-    player.setVelocityY(-vel);
-  } else if (cursors.down.isDown) {
-    player.setVelocityY(vel);
-  }
-
-  if (cursors.left.isDown) {
-    player.setVelocityX(-vel);
-  } else if (cursors.right.isDown) {
-    player.setVelocityX(vel);
-  }
-
-  if (keys.W.isDown) {
-    camera.scrollY -= vel * dt;
-  } else if (keys.S.isDown) {
-    camera.scrollY += vel * dt;
-  }
-
-  if (keys.A.isDown) {
-    camera.scrollX -= vel * dt;
-  } else if (keys.D.isDown) {
-    camera.scrollX += vel * dt;
-  }
-  */
-
   if (!paused) {
+    handleScrolling(this, camera, dt);
+
     graphics.clear();
 
-    // draw selection rectangle
-    graphics.lineStyle(2, 0xffffff, 0.5); // width, color, alpha
+    // draw selection circle
+    graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
     graphics.strokeCircle(
       grid2world(selectedEntity.getData('x')),
       grid2world(selectedEntity.getData('y')),
       tileSize / 2
     );
 
-    if (player.data.get('state') === STATE.MOVE) {
-      const data = player.data;
-      const values = player.data.values;
-      const movesX = data.get('movesX');
-      const movesY = data.get('movesY');
-      if (movesX === 0 && movesY === 0) {
-        data.set('state', STATE.IDLE);
-        data.set('actionTimeElapsed', 0);
-      } else {
-        const timeElapsed = data.get('actionTimeElapsed') + dt;
+    drawFuncs.forEach((func) => {
+      func();
+    });
 
-        if (timeElapsed >= data.get('moveSpeed')) {
-          if (movesX !== 0) {
-            if (movesX > 0) {
-              values.movesX--;
-              values.gridX++;
-              /*               data.set('movesX', movesX - 1);
-              data.set('gridX', gridX + 1); */
-            } else {
-              values.movesX++;
-              values.gridX--;
-              /*               data.set('movesX', movesX + 1);
-              data.set('gridX', gridX - 1); */
-            }
-          } else if (movesY !== 0) {
-            if (movesY > 0) {
-              values.movesY--;
-              values.gridY++;
-            } else {
-              values.movesY++;
-              values.gridY--;
-            }
-          }
-          data.set('actionTimeElapsed', timeElapsed - data.get('moveSpeed'));
-        } else {
-          data.set('actionTimeElapsed', timeElapsed);
+    entities.forEach((entity) => {
+      const deque = entity.getData('actionsDeque');
+      if (deque.length > 0) {
+        const action = deque.peek();
+        const values = entity.data.values;
+        const x = values.x;
+        const y = values.y;
+
+        // redundant move
+        if (action.state === STATE.MOVE && (x === action.x && y === action.y)) {
+          deque.shift();
+          return;
         }
+
+        // time elapsed
+        if (action.elapsed > action.done) {
+          if (action.state === STATE.MOVE) {
+            entity.data.set('state', STATE.MOVE);
+            if (x < action.x) {
+              values.x++;
+            } else if (x > action.x) {
+              values.x--;
+            } else if (y < action.y) {
+              values.y++;
+            } else if (y > action.y) {
+              values.y--;
+            }
+
+            if (x === action.x && y === action.y) {
+              // we are there
+              deque.shift();
+              entity.data.set('state', STATE.IDLE);
+              const nextAction = deque.peek();
+              if (nextAction) {
+                nextAction.elapsed = action.elapsed - action.done;
+              }
+            } else {
+              // keep moving to destination
+              action.elapsed -= action.done;
+            }
+          } else {
+          }
+        } else {
+          // action not done
+          action.elapsed += dt;
+        }
+      } else {
+        entity.data.set('state', STATE.IDLE);
       }
-    }
+    });
 
     /*   for (let i = 0; i < rects.length; i++) {
     graphics.strokeRectShape(rects[i]);
     graphics.fillRectShape(rects[i]);
   } */
 
-    handleScrolling(this, camera, dt);
-
     // misc. variables
     const width = camera.width;
     const height = camera.height;
-    const moveThresholdX = width / 6;
-    const moveThresholdY = height / 6;
     const mouseX = this.input.x;
     const mouseY = this.input.y;
 
@@ -393,8 +411,10 @@ function update(time, delta) {
       `camera y: ${this.cameras.main.scrollY}`,
       `rad: ${rad}`,
       `ratioX, ratioY: ${ratioX}, ${ratioY}`,
-      `actionTimeElapsed: 
-      ${player.data.get('actionTimeElapsed')},`
+      `selectedEntity, x, y, deque: 
+      ${selectedEntity.getData('x')}
+      ${selectedEntity.getData('y')}
+      ${JSON.stringify(selectedEntity.getData('actionsDeque'))}`
     ]);
   } else {
   }
