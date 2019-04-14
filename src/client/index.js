@@ -122,6 +122,51 @@ function pushAction(entity, action) {
   entity.getData('actionsDeque').push(action);
 }
 
+function drawEntityActions(entity) {
+  let movePosX = grid2world(entity.getData('x'));
+  let movePosY = grid2world(entity.getData('y'));
+  const deque = entity.getData('actionsDeque');
+  deque.forEach((action) => {
+    if (action.state === STATE.MOVE) {
+      const line = new Phaser.Geom.Line(
+        movePosX,
+        movePosY,
+        movePosX + action.x * tileSize,
+        movePosY + action.y * tileSize
+      );
+
+      const triangle = new Phaser.Geom.Triangle.BuildEquilateral(
+        0,
+        0,
+        tileSize / 4.0
+      );
+
+      if (action.x > 0) {
+        Phaser.Geom.Triangle.Rotate(triangle, Math.PI / 2);
+      } else if (action.x < 0) {
+        Phaser.Geom.Triangle.Rotate(triangle, -Math.PI / 2);
+      }
+
+      if (action.y > 0) {
+        Phaser.Geom.Triangle.Rotate(triangle, Math.PI);
+      }
+      Phaser.Geom.Triangle.CenterOn(
+        triangle,
+        movePosX + (action.x * tileSize) / 2.0,
+        movePosY + (action.y * tileSize) / 2.0
+      );
+
+      graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
+      graphics.strokeTriangleShape(triangle);
+
+      graphics.lineStyle(3, 0xffffff, 0.5); // width, color, alpha
+      graphics.strokeLineShape(line);
+      movePosX += action.x * tileSize;
+      movePosY += action.y * tileSize;
+    }
+  });
+}
+
 function makeGrid(
   _this,
   width = 10,
@@ -411,51 +456,12 @@ function update(time, delta) {
       func();
     });
 
+    globals.entities.forEach(entity => drawEntityActions(entity));
+
     // handle all Entities
     globals.entities.forEach((entity) => {
       const deque = entity.getData('actionsDeque');
       if (deque.length > 0) {
-        let movePosX = grid2world(entity.getData('x'));
-        let movePosY = grid2world(entity.getData('y'));
-        deque.forEach((action) => {
-          if (action.state === STATE.MOVE) {
-            const line = new Phaser.Geom.Line(
-              movePosX,
-              movePosY,
-              movePosX + action.x * tileSize,
-              movePosY + action.y * tileSize
-            );
-
-            const triangle = new Phaser.Geom.Triangle.BuildEquilateral(
-              0,
-              0,
-              tileSize / 4.0
-            );
-
-            if (action.x > 0) {
-              Phaser.Geom.Triangle.Rotate(triangle, Math.PI / 2);
-            } else if (action.x < 0) {
-              Phaser.Geom.Triangle.Rotate(triangle, -Math.PI / 2);
-            }
-
-            if (action.y > 0) {
-              Phaser.Geom.Triangle.Rotate(triangle, Math.PI);
-            }
-            Phaser.Geom.Triangle.CenterOn(
-              triangle,
-              movePosX + (action.x * tileSize) / 2.0,
-              movePosY + (action.y * tileSize) / 2.0
-            );
-
-            graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
-            graphics.strokeTriangleShape(triangle);
-
-            graphics.lineStyle(3, 0xffffff, 0.5); // width, color, alpha
-            graphics.strokeLineShape(line);
-            movePosX += action.x * tileSize;
-            movePosY += action.y * tileSize;
-          }
-        });
         const action = deque.peek();
         const values = entity.data.values;
         const x = values.x;
