@@ -136,7 +136,7 @@ function makeGrid(
       const tile = _this.add
         .sprite(offset + i * tileSize, offset + j * tileSize, 'grass')
         .setInteractive();
-        /*
+      /*
         .on('mouseDown', (pointer) => {
           if (pointer.rightButtonDown()) {
             tile.setTint(0xaa0000);
@@ -366,11 +366,13 @@ function update(time, delta) {
   const mouseY = this.input.y;
   const mouseWorldX = this.input.mousePointer.worldX;
   const mouseWorldY = this.input.mousePointer.worldY;
-  const gridPosX = Math.floor((mouseWorldX - tileSize/2.0) / tileSize) - (offset - tileSize/2.0) / tileSize;
-  const gridPosY = Math.floor((mouseWorldY - tileSize/2.0) / tileSize) - (offset - tileSize/2.0) / tileSize;
+  const gridPosX = Math.floor((mouseWorldX - tileSize / 2.0) / tileSize)
+    - (offset - tileSize / 2.0) / tileSize;
+  const gridPosY = Math.floor((mouseWorldY - tileSize / 2.0) / tileSize)
+    - (offset - tileSize / 2.0) / tileSize;
 
-  const gridX = gridPosX+0.5;
-  const gridY = gridPosY+0.5;
+  const gridX = gridPosX + 0.5;
+  const gridY = gridPosY + 0.5;
 
   const x = mouseX - width / 2;
   const y = mouseY - height / 2;
@@ -391,8 +393,8 @@ function update(time, delta) {
     // draw selection circle
     graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
     graphics.strokeRect(
-      grid2world(selectedEntity.getData('x')) - selectedEntity.width/2.0,
-      grid2world(selectedEntity.getData('y')) - selectedEntity.height/2.0,
+      grid2world(selectedEntity.getData('x')) - selectedEntity.width / 2.0,
+      grid2world(selectedEntity.getData('y')) - selectedEntity.height / 2.0,
       selectedEntity.width,
       selectedEntity.height
     );
@@ -416,14 +418,42 @@ function update(time, delta) {
         let movePosX = grid2world(entity.getData('x'));
         let movePosY = grid2world(entity.getData('y'));
         deque.forEach((action) => {
-          if(action.state === STATE.MOVE){
-            const line = new Phaser.Geom.Line(movePosX, movePosY, movePosX+action.x*tileSize, movePosY+action.y*tileSize);
+          if (action.state === STATE.MOVE) {
+            const line = new Phaser.Geom.Line(
+              movePosX,
+              movePosY,
+              movePosX + action.x * tileSize,
+              movePosY + action.y * tileSize
+            );
 
-            // draw selection circle
+            const triangle = new Phaser.Geom.Triangle.BuildEquilateral(
+              0,
+              0,
+              tileSize / 4.0
+            );
+
+            if (action.x > 0) {
+              Phaser.Geom.Triangle.Rotate(triangle, Math.PI / 2);
+            } else if (action.x < 0) {
+              Phaser.Geom.Triangle.Rotate(triangle, -Math.PI / 2);
+            }
+
+            if (action.y > 0) {
+              Phaser.Geom.Triangle.Rotate(triangle, Math.PI);
+            }
+            Phaser.Geom.Triangle.CenterOn(
+              triangle,
+              movePosX + (action.x * tileSize) / 2.0,
+              movePosY + (action.y * tileSize) / 2.0
+            );
+
             graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
+            graphics.strokeTriangleShape(triangle);
+
+            graphics.lineStyle(3, 0xffffff, 0.5); // width, color, alpha
             graphics.strokeLineShape(line);
-            movePosX += action.x*tileSize;
-            movePosY += action.y*tileSize;
+            movePosX += action.x * tileSize;
+            movePosY += action.y * tileSize;
           }
         });
         const action = deque.peek();
