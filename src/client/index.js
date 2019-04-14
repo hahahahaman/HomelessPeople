@@ -26,7 +26,8 @@ const game = new Phaser.Game(config); // main process
 const STATE = {
   IDLE: 'idle',
   MOVE: 'move',
-  ATTACK: 'attack'
+  PUSHING: 'pushing',
+  PUSHED: 'pushed'
 };
 
 let player;
@@ -66,6 +67,7 @@ function makeMap(_this, width = 10, height = 10) {
       const tile = _this.add
         .sprite(offset + i * tileSize, offset + j * tileSize, 'grass')
         .setInteractive()
+        /*
         .on('mouseDown', (pointer) => {
           if (pointer.rightButtonDown()) {
             tile.setTint(0xaa0000);
@@ -79,6 +81,7 @@ function makeMap(_this, width = 10, height = 10) {
             selectedEntity.getData('actionsDeque').push(moveTo);
           }
         })
+        */
         .on('pointerup', () => {
           tile.clearTint();
         })
@@ -154,6 +157,22 @@ function setEntityData(
   });
 }
 
+function moveAction(x, y) {
+  return {
+    state: STATE.MOVE,
+    elapsed: 0.0,
+    done: selectedEntity.getData('moveSpeed'),
+    x,
+    y
+  };
+}
+
+function pushAction(entity, action) {
+  entity.getData('actionsDeque').push(action);
+}
+
+function createSelectableEntities() {}
+
 function create() {
   // stop the right click menu from popping up
   this.input.mouse.disableContextMenu();
@@ -162,26 +181,48 @@ function create() {
   //  regardless of their place on the display list
   this.input.setTopOnly(true);
 
-  this.input.keyboard.on('keydown-P', (event) => {
-    // pause or unpause
-    paused = !paused;
-    if (paused) {
-      this.cameras.main.setAlpha(0.8);
-      disableMap();
-      disableEntities();
-    } else {
-      this.cameras.main.setAlpha(1);
-      enableMap();
-      enableEntities();
-    }
-  });
+  /*
+    Handle Input
+  */
+  this.input.keyboard
+    .on('keydown-P', (event) => {
+      // pause or unpause
+      paused = !paused;
+      if (paused) {
+        this.cameras.main.setAlpha(0.8);
+        disableMap();
+        disableEntities();
+      } else {
+        this.cameras.main.setAlpha(1);
+        enableMap();
+        enableEntities();
+      }
+    })
+    .on('keydown-SPACE', (event) => {
+      // center on selected entity
+      if (selectedEntity) {
+        this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+      }
+    });
 
-  this.input.keyboard.on('keydown-SPACE', (event) => {
-    // center on selected entity
-    if (selectedEntity) {
-      this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
-    }
-  });
+  // WASD input
+  this.input.keyboard
+    .on('keydown-W', (event) => {
+      pushAction(selectedEntity, moveAction(0, -1)); // up is negative
+      console.log('w');
+    })
+    .on('keydown-S', (event) => {
+      pushAction(selectedEntity, moveAction(0, 1)); // down
+      console.log('s');
+    })
+    .on('keydown-A', (event) => {
+      pushAction(selectedEntity, moveAction(-1, 0)); // left
+      console.log('a');
+    })
+    .on('keydown-D', (event) => {
+      pushAction(selectedEntity, moveAction(1, 0)); // right
+      console.log('d');
+    });
 
   //  If a Game Object is clicked on, this event is fired.
   //  We can use it to emit the 'clicked' event on the game object itself.
@@ -275,6 +316,7 @@ function create() {
     .setScrollFactor(0);
 }
 
+// Handle the camera scrolling
 function handleScrolling(_this, camera, dt) {
   const width = camera.width;
   const height = camera.height;
@@ -344,29 +386,18 @@ function update(time, delta) {
         if (action.elapsed > action.done) {
           if (action.state === STATE.MOVE) {
             entity.data.set('state', STATE.MOVE);
-            if (x < action.x) {
-              values.x++;
-            } else if (x > action.x) {
-              values.x--;
-            } else if (y < action.y) {
-              values.y++;
-            } else if (y > action.y) {
-              values.y--;
-            }
+            values.x += action.x;
+            values.y += action.y;
+          } else if (action.state === STATE.PUSHED) {
+            entity.data.set('state', STATE.PUSHED);
+          }
+          const extraTime = action.elapsed - action.done;
 
-            if (x === action.x && y === action.y) {
-              // we are there
-              deque.shift();
-              entity.data.set('state', STATE.IDLE);
-              const nextAction = deque.peek();
-              if (nextAction) {
-                nextAction.elapsed = action.elapsed - action.done;
-              }
-            } else {
-              // keep moving to destination
-              action.elapsed -= action.done;
-            }
-          } else {
+          deque.shift();
+          if (deque.length > 0) {
+            // transfer time to next action
+            const nextAction = deque.peek();
+            nextAction.elapsed += extraTime;
           }
         } else {
           // action not done
