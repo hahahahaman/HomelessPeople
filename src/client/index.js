@@ -4,12 +4,14 @@ import Phaser from 'phaser';
 import Deque from 'collections/deque';
 import Set from 'collections/set';
 
+import * as globals from './globals';
+
 const config = {
   type: Phaser.AUTO,
   scale: {
-    parent: 'game-container', //Don't know why but without this theres a gap at the bottom
-    mode: Phaser.Scale.FIT, //Fit to screen, retain ratio
-    autoCenter: Phaser.Scale.CENTER_BOTH, //center both vert and horiz
+    parent: 'game-container', // Don't know why but without this theres a gap at the bottom
+    mode: Phaser.Scale.FIT, // Fit to screen, retain ratio
+    autoCenter: Phaser.Scale.CENTER_BOTH, // center both vert and horiz
     width: 600,
     height: 600
   },
@@ -40,15 +42,12 @@ let player2;
 let cursors;
 let keys;
 let text;
-const entities = new Set();
-const drawFuncs = new Set();
 let selectedEntity;
 let graphics;
-let map;
+let gridMap;
 let paused = false;
-const rects = [];
-const offset = 1000;
-const tileSize = 50;
+const offset = globals.OFFSET;
+const tileSize = globals.TILE_SIZE;
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -64,67 +63,14 @@ function preload() {
   this.load.image('grass', 'assets/grass.jpg');
 }
 
-function makeMap(_this, width = 10, height = 10) {
-  map = new Array(width);
-  for (let i = 0; i < width; i++) {
-    map[i] = new Array(height);
-    for (let j = 0; j < height; j++) {
-      const tile = _this.add
-        .sprite(offset + i * tileSize, offset + j * tileSize, 'grass')
-        .setInteractive()
-        /*
-        .on('mouseDown', (pointer) => {
-          if (pointer.rightButtonDown()) {
-            tile.setTint(0xaa0000);
-            const moveTo = {
-              state: STATE.MOVE,
-              elapsed: 0.0,
-              done: selectedEntity.getData('moveSpeed'),
-              x: i,
-              y: j
-            };
-            selectedEntity.getData('actionsDeque').push(moveTo);
-          }
-        })
-        */
-        .on('pointerup', () => {
-          tile.clearTint();
-        })
-        .on('pointerout', () => {
-          tile.clearTint();
-        })
-        .on('pointerover', () => {
-          tile.setTint(0x00ff00);
-        });
-
-      map[i][j] = tile;
-    }
-  }
-}
-
-function disableMap() {
-  for (let i = 0; i < map.length; i++) {
-    for (let j = 0; j < map[i].length; j++) {
-      map[i][j].disableInteractive();
-    }
-  }
-}
-
-function enableMap() {
-  for (let i = 0; i < map.length; i++) {
-    for (let j = 0; j < map[i].length; j++) {
-      map[i][j].setInteractive();
-    }
-  }
-}
 function disableEntities() {
-  entities.forEach((entity) => {
+  globals.entities.forEach((entity) => {
     entity.disableInteractive();
   });
 }
 
 function enableEntities() {
-  entities.forEach((entity) => {
+  globals.entities.forEach((entity) => {
     entity.setInteractive();
   });
 }
@@ -176,7 +122,65 @@ function pushAction(entity, action) {
   entity.getData('actionsDeque').push(action);
 }
 
-function createSelectableEntities() {}
+function makeGrid(
+  _this,
+  width = 10,
+  height = 10,
+  offset = 1000,
+  tileSize = 50
+) {
+  const grid = new Array(width);
+  for (let i = 0; i < width; i++) {
+    grid[i] = new Array(height);
+    for (let j = 0; j < height; j++) {
+      const tile = _this.add
+        .sprite(offset + i * tileSize, offset + j * tileSize, 'grass')
+        .setInteractive();
+        /*
+        .on('mouseDown', (pointer) => {
+          if (pointer.rightButtonDown()) {
+            tile.setTint(0xaa0000);
+            const moveTo = {
+              state: STATE.MOVE,
+              elapsed: 0.0,
+              done: selectedEntity.getData('moveSpeed'),
+              x: i,
+              y: j
+            };
+            selectedEntity.getData('actionsDeque').push(moveTo);
+          }
+        })
+          tile.clearTint();
+        })
+        .on('pointerout', () => {
+          tile.clearTint();
+        })
+        .on('mouseOver', () => {
+          tile.setTint(0x00ff00);
+        });
+        */
+
+      grid[i][j] = tile;
+    }
+  }
+  return grid;
+}
+
+function disableGrid(grid) {
+  for (let i = 0; i < grid.length; i++) {
+    for (let j = 0; j < grid[i].length; j++) {
+      grid[i][j].disableInteractive();
+    }
+  }
+}
+
+function enableGrid(grid) {
+  for (let i = 0; i < grid.length; i++) {
+    for (let j = 0; j < grid[i].length; j++) {
+      grid[i][j].setInteractive();
+    }
+  }
+}
 
 function create() {
   // stop the right click menu from popping up
@@ -195,11 +199,11 @@ function create() {
       paused = !paused;
       if (paused) {
         this.cameras.main.setAlpha(0.8);
-        disableMap();
+        disableGrid(gridMap);
         disableEntities();
       } else {
         this.cameras.main.setAlpha(1);
-        enableMap();
+        enableGrid(gridMap);
         enableEntities();
       }
     })
@@ -214,19 +218,15 @@ function create() {
   this.input.keyboard
     .on('keydown-W', (event) => {
       pushAction(selectedEntity, moveAction(0, -1)); // up is negative
-      console.log('w');
     })
     .on('keydown-S', (event) => {
       pushAction(selectedEntity, moveAction(0, 1)); // down
-      console.log('s');
     })
     .on('keydown-A', (event) => {
       pushAction(selectedEntity, moveAction(-1, 0)); // left
-      console.log('a');
     })
     .on('keydown-D', (event) => {
       pushAction(selectedEntity, moveAction(1, 0)); // right
-      console.log('d');
     });
 
   //  If a Game Object is clicked on, this event is fired.
@@ -270,7 +270,7 @@ function create() {
   cursors = this.input.keyboard.createCursorKeys();
   keys = this.input.keyboard.addKeys('W,A,S,D');
 
-  makeMap(this, 10);
+  gridMap = makeGrid(this, 5, 10, globals.OFFSET, globals.TILE_SIZE);
 
   player = this.add.sprite(1920, 1080, 'dude');
   player.setInteractive();
@@ -288,10 +288,10 @@ function create() {
     graphics.strokeCircle(player.x, player.y, tileSize / 2);
   }
   player.on('mouseOver', (pointer) => {
-    drawFuncs.add(mouseOverPlayer);
+    globals.drawFuncs.add(mouseOverPlayer);
   });
   player.on('mouseOut', (pointer) => {
-    drawFuncs.delete(mouseOverPlayer);
+    globals.drawFuncs.delete(mouseOverPlayer);
   });
   player2 = this.add.sprite(0, 0, 'dude');
   player2.setInteractive();
@@ -302,8 +302,11 @@ function create() {
     }
   });
 
-  entities.add(player);
-  entities.add(player2);
+  globals.entities.add(player);
+  globals.entities.add(player2);
+
+  globals.selectableEntities.push(player);
+  globals.selectableEntities.push(player2);
 
   selectedEntity = player;
 
@@ -356,6 +359,30 @@ function update(time, delta) {
   const dt = delta / 1000;
   const camera = this.cameras.main;
 
+  // misc. variables
+  const width = camera.width;
+  const height = camera.height;
+  const mouseX = this.input.x;
+  const mouseY = this.input.y;
+  const mouseWorldX = this.input.mousePointer.worldX;
+  const mouseWorldY = this.input.mousePointer.worldY;
+  const gridPosX = Math.floor((mouseWorldX - tileSize/2.0) / tileSize) - (offset - tileSize/2.0) / tileSize;
+  const gridPosY = Math.floor((mouseWorldY - tileSize/2.0) / tileSize) - (offset - tileSize/2.0) / tileSize;
+
+  const gridX = gridPosX+0.5;
+  const gridY = gridPosY+0.5;
+
+  const x = mouseX - width / 2;
+  const y = mouseY - height / 2;
+  const rad = Math.atan2(y, x);
+  const golden = 1.618;
+
+  // Exponential increase in camera scroll speed
+  const distX = Math.min(Math.abs(x), width / 2) ** golden;
+  const distY = Math.min(Math.abs(y), height / 2) ** golden;
+  const ratioX = distX / Math.pow(width / 2, golden);
+  const ratioY = distY / Math.pow(height / 2, golden);
+
   if (!paused) {
     handleScrolling(this, camera, dt);
 
@@ -363,29 +390,46 @@ function update(time, delta) {
 
     // draw selection circle
     graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
-    graphics.strokeCircle(
-      grid2world(selectedEntity.getData('x')),
-      grid2world(selectedEntity.getData('y')),
-      tileSize / 2
+    graphics.strokeRect(
+      grid2world(selectedEntity.getData('x')) - selectedEntity.width/2.0,
+      grid2world(selectedEntity.getData('y')) - selectedEntity.height/2.0,
+      selectedEntity.width,
+      selectedEntity.height
     );
 
-    drawFuncs.forEach((func) => {
+    graphics.strokeRect(
+      tileSize * gridPosX + offset,
+      tileSize * gridPosY + offset,
+      tileSize,
+      tileSize
+    );
+
+    // call all UI draw function
+    globals.drawFuncs.forEach((func) => {
       func();
     });
 
-    entities.forEach((entity) => {
+    // handle all Entities
+    globals.entities.forEach((entity) => {
       const deque = entity.getData('actionsDeque');
       if (deque.length > 0) {
+        let movePosX = grid2world(entity.getData('x'));
+        let movePosY = grid2world(entity.getData('y'));
+        deque.forEach((action) => {
+          if(action.state === STATE.MOVE){
+            const line = new Phaser.Geom.Line(movePosX, movePosY, movePosX+action.x*tileSize, movePosY+action.y*tileSize);
+
+            // draw selection circle
+            graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
+            graphics.strokeLineShape(line);
+            movePosX += action.x*tileSize;
+            movePosY += action.y*tileSize;
+          }
+        });
         const action = deque.peek();
         const values = entity.data.values;
         const x = values.x;
         const y = values.y;
-
-        // redundant move
-        if (action.state === STATE.MOVE && (x === action.x && y === action.y)) {
-          deque.shift();
-          return;
-        }
 
         // time elapsed
         if (action.elapsed > action.done) {
@@ -418,23 +462,6 @@ function update(time, delta) {
     graphics.fillRectShape(rects[i]);
   } */
 
-    // misc. variables
-    const width = camera.width;
-    const height = camera.height;
-    const mouseX = this.input.x;
-    const mouseY = this.input.y;
-
-    const x = mouseX - width / 2;
-    const y = mouseY - height / 2;
-    const rad = Math.atan2(y, x);
-    const golden = 1.618;
-
-    // Exponential increase in camera scroll speed
-    const distX = Math.min(Math.abs(x), width / 2) ** golden;
-    const distY = Math.min(Math.abs(y), height / 2) ** golden;
-    const ratioX = distX / Math.pow(width / 2, golden);
-    const ratioY = distY / Math.pow(height / 2, golden);
-
     // set debug text
     text.setText([
       `fps: ${game.loop.actualFps}`,
@@ -445,6 +472,7 @@ function update(time, delta) {
       `world y: ${this.input.mousePointer.worldY}`,
       `camera x: ${this.cameras.main.scrollX}`,
       `camera y: ${this.cameras.main.scrollY}`,
+      `grid x, y: ${gridX} ${gridY}`,
       `rad: ${rad}`,
       `ratioX, ratioY: ${ratioX}, ${ratioY}`,
       `selectedEntity, x, y, deque: 
@@ -453,5 +481,6 @@ function update(time, delta) {
       ${JSON.stringify(selectedEntity.getData('actionsDeque'))}`
     ]);
   } else {
+    // paused, do something
   }
 }
