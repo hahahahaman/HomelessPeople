@@ -6,8 +6,13 @@ import Set from 'collections/set';
 
 const config = {
   type: Phaser.AUTO,
-  width: 600,
-  height: 600,
+  scale: {
+    parent: 'game-container', //Don't know why but without this theres a gap at the bottom
+    mode: Phaser.Scale.FIT, //Fit to screen, retain ratio
+    autoCenter: Phaser.Scale.CENTER_BOTH, //center both vert and horiz
+    width: 600,
+    height: 600
+  },
   physics: {
     default: 'arcade',
     arcade: {
