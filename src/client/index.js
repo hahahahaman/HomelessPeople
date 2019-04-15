@@ -59,7 +59,9 @@ let player;
 let player2;
 let cursors;
 let keys;
-let text;
+let debugText;
+let clockText;
+let levelTime = 0.0;
 let pausedText;
 let selectedEntity;
 let graphics;
@@ -116,7 +118,11 @@ function setEntityData(
     direction = DIRECTION.RIGHT,
     state = STATE.IDLE,
     actionsDeque = new Deque(),
-    text = phaser.add.text(0, 0, '', { font: '14px Courier', fill: '#ffffff' })
+    text = phaser.add.text(0, 0, '', { font: '16px Courier', fill: '#ffffff' }),
+    doneText = phaser.add.text(0, 0, '', {
+      font: '16px Courier',
+      fill: '#ffffff'
+    })
   } = {}
 ) {
   obj.setDataEnabled();
@@ -129,7 +135,8 @@ function setEntityData(
     .set('direction', direction)
     .set('state', state)
     .set('actionsDeque', actionsDeque)
-    .set('text', text);
+    .set('text', text)
+    .set('doneText', doneText);
   obj.x = grid2world(x);
   obj.y = grid2world(y);
   obj.on('changedata', (gameObject, key, value) => {
@@ -185,35 +192,6 @@ function drawEntityActions(entity) {
   const values = entity.data.values;
   const deque = values.actionsDeque;
 
-  if (deque.length > 0) {
-    // draw current action indicators
-    const action = deque.peek();
-
-    const w = entity.width / 10.0;
-    const h = (entity.height / 2.0) * (1.0 - action.elapsed / action.done);
-
-    // bar indicator for current action
-    graphics.fillStyle(0xffffff, 0.8);
-    graphics.fillRect(
-      entity.x - entity.width / 2.0,
-      entity.y - entity.height / 2.0,
-      w,
-      h
-    );
-
-    // elapsed time text
-    const elapsedText = values.text;
-    elapsedText.setVisible(true);
-    elapsedText.setText(`${action.elapsed.toFixed(2)}`);
-    elapsedText.setPosition(
-      entity.x + entity.width / 2.0,
-      entity.y - entity.height / 2.0
-    );
-  } else {
-    // disable text indicator
-    values.text.setVisible(false);
-  }
-
   deque.forEach((action) => {
     if (action.state === STATE.MOVE) {
       // Draw all the move stuff
@@ -254,6 +232,48 @@ function drawEntityActions(entity) {
       movePosY += action.y * tileSize;
     }
   });
+
+  if (deque.length > 0) {
+    // draw current action indicators
+    let totalTime = 0.0;
+
+    deque.forEach((action) => {
+      totalTime += action.done;
+    });
+
+    const action = deque.peek();
+    const w = entity.width / 10.0;
+    const h = entity.height * (1.0 - action.elapsed / action.done);
+
+    // bar indicator for current action
+    graphics.fillStyle(0xffffff, 0.8);
+    graphics.fillRect(
+      entity.x - entity.width / 2.0,
+      entity.y - entity.height / 2.0,
+      w,
+      h
+    );
+
+    // elapsed time text
+    totalTime -= action.elapsed;
+    const elapsedText = values.text;
+    elapsedText.setVisible(true);
+    elapsedText.setText(`${totalTime.toFixed(1)}`);
+    elapsedText.setPosition(
+      entity.x + entity.width / 2.0,
+      entity.y - entity.height / 2.0
+    );
+
+    // done time indicator
+    const doneText = values.doneText;
+    doneText.setVisible(true);
+    doneText.setText(`${(levelTime + totalTime).toFixed(1)}`);
+    doneText.setPosition(movePosX, movePosY);
+  } else {
+    // disable text indicator
+    values.text.setVisible(false);
+    values.doneText.setVisible(false);
+  }
 }
 
 function makeGrid(
@@ -308,6 +328,7 @@ function create() {
     .on('keydown-P', (event) => {
       // pause or unpause
       paused = !paused;
+      pausedText.setVisible(paused);
       if (paused) {
         this.cameras.main.setAlpha(0.8);
         disableGrid(gridMap);
@@ -340,9 +361,11 @@ function create() {
       pushAction(selectedEntity, moveAction(selectedEntity, 1, 0)); // right
     })
     // remove actions from actions deque
+    /*
     .on('keydown-Z', (event) => {
       selectedEntity.getData('actionsDeque').shift(); // remove from front
     })
+    */
     .on('keydown-X', (event) => {
       const last_action = selectedEntity.getData('actionsDeque').pop(); // remove from back
       selectedEntity.data.values.end_x -= last_action.x
@@ -489,10 +512,26 @@ function create() {
     /*     fillStyle: { color: 0x00ff00, alpha: 0.8 } */
   });
 
-  text = this.add
+  // Text UI
+  pausedText = phaser.add
+    .text(0, 0, 'PAUSE\n  P', { font: '40px Courier', fill: '#ffffff' })
+    .setScrollFactor(0);
+  pausedText.setPosition(
+    phaser.cameras.main.width / 2.0 - pausedText.displayWidth / 2.0,
+    phaser.cameras.main.height / 2.0 - pausedText.displayHeight / 2.0
+  );
+  pausedText.setVisible(false);
+
+  clockText = phaser.add
+    .text(0, 0, `Time: ${levelTime.toFixed(2)}`, {
+      font: '20px Courier',
+      fill: '#ffffff'
+    })
+    .setScrollFactor(0);
+
+  debugText = phaser.add
     .text(10, 10, 'Cursors to move', { font: '16px Courier', fill: '#ffffff' })
     .setScrollFactor(0);
-  // scene.add.text(400, 400, 'Paused', { font: '16px Courier', fill: '#ffffff' })
 }
 
 // Handle the camera scrolling
@@ -558,6 +597,8 @@ function update(time, delta) {
   const ratioY = distY / Math.pow(height / 2, golden);
 
   if (!paused) {
+    levelTime += dt;
+
     handleScrolling(this, camera, dt);
 
     graphics.clear();
@@ -632,7 +673,7 @@ function update(time, delta) {
     });
 
     // set debug text
-    text.setText([
+    debugText.setText([
       `fps: ${game.loop.actualFps}`,
       `dt: ${dt}`,
       `screen x: ${this.input.x}`,
@@ -647,8 +688,14 @@ function update(time, delta) {
       `selectedEntity, x, y, deque: 
       ${selectedEntity.getData('x')}
       ${selectedEntity.getData('y')}
-      ${JSON.stringify(selectedEntity.getData('actionsDeque'))}`
+      `
+      // ${JSON.stringify(selectedEntity.getData('actionsDeque'))}
     ]);
+    clockText.setText(`Time: ${levelTime.toFixed(1)}`);
+    clockText.setPosition(
+      phaser.cameras.main.width - clockText.displayWidth,
+      0
+    );
   } else {
     // paused, do something
   }
