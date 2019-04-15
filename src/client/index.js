@@ -87,7 +87,8 @@ let gridMap;
 let paused = false;
 const offset = globals.OFFSET;
 const tileSize = globals.TILE_SIZE;
-let worldHeight, worldWidth;
+let worldHeight;
+let worldWidth;
 let phaser;
 
 
@@ -140,6 +141,7 @@ function setEntityData(
     end_y = 0,
     moveSpeed = 0.5,
     direction = DIRECTION.RIGHT,
+    color = 0xfffff,
     state = STATE.IDLE,
     actionsDeque = new Deque(),
     text = phaser.add.text(0, 0, '', { font: '16px Courier', fill: '#ffffff' }),
@@ -157,6 +159,7 @@ function setEntityData(
     .set('end_y', end_y)
     .set('moveSpeed', moveSpeed) // seconds per block
     .set('direction', direction)
+    .set('color')
     .set('state', state)
     .set('actionsDeque', actionsDeque)
     .set('text', text)
@@ -181,12 +184,12 @@ function moveAction(entity, x, y) {
   }
 
   if (
-    entity.data.values.end_x + x >= worldWidth || 
-    entity.data.values.end_x + x < 0  ||
-    entity.data.values.end_y + y >= worldHeight ||
-    entity.data.values.end_y + y < 0
-    ) return null;
-  
+    entity.data.values.end_x + x >= worldWidth
+    || entity.data.values.end_x + x < 0
+    || entity.data.values.end_y + y >= worldHeight
+    || entity.data.values.end_y + y < 0
+  ) return null;
+
   entity.data.values.end_x += x;
   entity.data.values.end_y += y;
 
@@ -247,10 +250,10 @@ function drawEntityActions(entity) {
         movePosY + (action.y * tileSize) / 2.0
       );
 
-      graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
+      graphics.lineStyle(2, values.color, 0.7); // width, color, alpha
       graphics.strokeTriangleShape(triangle);
 
-      graphics.lineStyle(3, 0xffffff, 0.5); // width, color, alpha
+      graphics.lineStyle(3, values.color, 0.5); // width, color, alpha
       graphics.strokeLineShape(line);
       movePosX += action.x * tileSize;
       movePosY += action.y * tileSize;
@@ -270,7 +273,7 @@ function drawEntityActions(entity) {
     const h = entity.height * (1.0 - action.elapsed / action.done);
 
     // bar indicator for current action
-    graphics.fillStyle(0xffffff, 0.8);
+    graphics.fillStyle(values.color, 0.8);
     graphics.fillRect(
       entity.x - entity.width / 2.0,
       entity.y - entity.height / 2.0,
@@ -394,14 +397,30 @@ function create() {
     */
     .on('keydown-X', (event) => {
       const last_action = selectedEntity.getData('actionsDeque').pop(); // remove from back
-      selectedEntity.data.values.end_x -= last_action.x
-      selectedEntity.data.values.end_y -= last_action.y
+      selectedEntity.data.values.end_x -= last_action.x;
+      selectedEntity.data.values.end_y -= last_action.y;
     })
     .on('keydown-C', (event) => {
       // clear actions
-      selectedEntity.data.values.end_x = selectedEntity.data.values.x
-      selectedEntity.data.values.end_y = selectedEntity.data.values.y
+      selectedEntity.data.values.end_x = selectedEntity.data.values.x;
+      selectedEntity.data.values.end_y = selectedEntity.data.values.y;
       selectedEntity.getData('actionsDeque').clear();
+    })
+    .on('keydown-ONE', () => {
+      if (selectedEntity === globals.selectableEntities[0]) {
+        phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+      } else {
+        selectedEntity = globals.selectableEntities[0];
+      }
+      console.log(1);
+    })
+    .on('keydown-TWO', () => {
+      if (selectedEntity === globals.selectableEntities[1]) {
+        phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+      } else {
+        selectedEntity = globals.selectableEntities[1];
+      }
+      console.log(2);
     });
 
   //  If a Game Object is clicked on, this event is fired.
@@ -448,7 +467,13 @@ function create() {
   // Make grid based on world size.
   worldHeight = world.length;
   worldWidth = world[0].length;
-  gridMap = makeGrid(this, worldWidth, worldHeight, globals.OFFSET, globals.TILE_SIZE);
+  gridMap = makeGrid(
+    this,
+    worldWidth,
+    worldHeight,
+    globals.OFFSET,
+    globals.TILE_SIZE
+  );
 
   //--------------------------------------------
   // Players
@@ -486,11 +511,14 @@ function create() {
     entity.setInteractive();
   });
 
+  player.data.set('color', 0xff0000);
+  player2.data.set('color', 0x0000ff);
+
   // initialize all selectable entities
   globals.selectableEntities.push(player, player2);
   globals.selectableEntities.forEach((entity) => {
     function drawClicked() {
-      graphics.lineStyle(2, 0x4cc417, 1.0);
+      graphics.lineStyle(2, entity.getData('color'), 0.5);
       graphics.strokeCircle(entity.x, entity.y, tileSize / 2);
     }
     entity
@@ -517,7 +545,7 @@ function create() {
         player.data.values.y = y;
         player.data.values.end_x = x;
         player.data.values.end_y = y;
-      } 
+      }
       if (world[y][x] === '2') {
         player2.data.values.x = x;
         player2.data.values.y = y;
