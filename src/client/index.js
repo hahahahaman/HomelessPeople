@@ -7,17 +7,35 @@ import Deque from 'collections/deque';
 import * as globals from './globals';
 
 let world = [
-  ['1', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', 'a'],
-  ['a', 'a', 'a', 'a', '2'],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', '1', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', '2', 'a' ],
+  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
 ];
+
+let bg_world = [
+  [ '15', '15', '15', '15', '15', '15', '15', '15' ],
+  [ '15', '59', '04', '06', '02', '02', '60', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '48', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '49', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '50', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '49', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '48', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '47', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '48', '15' ],
+  [ '15', '14', '51', '51', '51', '51', '49', '15' ],
+  [ '15', '61', '54', '55', '54', '53', '46', '15' ],
+  [ '15', '15', '15', '15', '15', '15', '15', '15' ],
+];
+
 
 const config = {
   type: Phaser.AUTO,
@@ -72,6 +90,7 @@ const tileSize = globals.TILE_SIZE;
 let worldHeight, worldWidth;
 let phaser;
 
+
 function preload() {
   this.load.setBaseURL('../..');
   this.load.image('sky', 'assets/sky.png');
@@ -88,6 +107,11 @@ function preload() {
     frameWidth: 50,
     frameHeight: 50
   });
+
+  for (let i = 1; i <= 64; ++i) {
+    this.load.image('bg_'+("0" + i).slice(-2), 'assets/bg_tiles/generic-rpg-tile' + ("0" + i).slice(-2) +'.png')
+  }
+
   phaser = this;
 }
 
@@ -288,7 +312,9 @@ function makeGrid(
     grid[i] = new Array(height);
     for (let j = 0; j < height; j++) {
       const tile = _this.add
-        .sprite(offset + i * tileSize, offset + j * tileSize, 'grass')
+        .sprite(offset + i * tileSize, offset + j * tileSize, 'bg_' + bg_world[j][i])
+        .setOrigin(0.5)
+        .setScale(3.4)
         .setInteractive();
 
       grid[i][j] = tile;
