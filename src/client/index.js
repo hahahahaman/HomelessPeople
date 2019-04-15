@@ -47,12 +47,14 @@ let player2;
 let cursors;
 let keys;
 let text;
+let pausedText;
 let selectedEntity;
 let graphics;
 let gridMap;
 let paused = false;
 const offset = globals.OFFSET;
 const tileSize = globals.TILE_SIZE;
+let phaser;
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -70,6 +72,7 @@ function preload() {
     frameWidth: 50,
     frameHeight: 50
   });
+  phaser = this;
 }
 
 function disableEntities() {
@@ -96,7 +99,8 @@ function setEntityData(
     moveSpeed = 0.5,
     direction = DIRECTION.RIGHT,
     state = STATE.IDLE,
-    actionsDeque = new Deque()
+    actionsDeque = new Deque(),
+    text = phaser.add.text(0, 0, '', { font: '14px Courier', fill: '#ffffff' })
   } = {}
 ) {
   obj.setDataEnabled();
@@ -106,8 +110,8 @@ function setEntityData(
     .set('moveSpeed', moveSpeed) // seconds per block
     .set('direction', direction)
     .set('state', state)
-    .set('actionTimeElapsed', 0)
-    .set('actionsDeque', actionsDeque);
+    .set('actionsDeque', actionsDeque)
+    .set('text', text);
   obj.x = grid2world(x);
   obj.y = grid2world(y);
   obj.on('changedata', (gameObject, key, value) => {
@@ -141,11 +145,49 @@ function pushAction(entity, action) {
 }
 
 function drawEntityActions(entity) {
-  let movePosX = grid2world(entity.getData('x'));
-  let movePosY = grid2world(entity.getData('y'));
-  const deque = entity.getData('actionsDeque');
+  // draw all kinds of indicators for actions
+  // timer for the current actions
+  // movement indicators
+  // push indicators
+  // warning indicators?
+  let movePosX = entity.x;
+  let movePosY = entity.y;
+
+  const values = entity.data.values;
+  const deque = values.actionsDeque;
+
+  if (deque.length > 0) {
+    // draw current action indicators
+    const action = deque.peek();
+
+    const w = entity.width / 10.0;
+    const h = (entity.height / 2.0) * (1.0 - action.elapsed / action.done);
+
+    // bar indicator for current action
+    graphics.fillStyle(0xffffff, 0.8);
+    graphics.fillRect(
+      entity.x - entity.width / 2.0,
+      entity.y - entity.height / 2.0,
+      w,
+      h
+    );
+
+    // elapsed time text
+    const elapsedText = values.text;
+    elapsedText.setVisible(true);
+    elapsedText.setText(`${action.elapsed.toFixed(2)}`);
+    elapsedText.setPosition(
+      entity.x + entity.width / 2.0,
+      entity.y - entity.height / 2.0
+    );
+  } else {
+    // disable text indicator
+    values.text.setVisible(false);
+  }
+
   deque.forEach((action) => {
     if (action.state === STATE.MOVE) {
+      // Draw all the move stuff
       const line = new Phaser.Geom.Line(
         movePosX,
         movePosY,
@@ -199,29 +241,6 @@ function makeGrid(
       const tile = _this.add
         .sprite(offset + i * tileSize, offset + j * tileSize, 'grass')
         .setInteractive();
-      /*
-        .on('mouseDown', (pointer) => {
-          if (pointer.rightButtonDown()) {
-            tile.setTint(0xaa0000);
-            const moveTo = {
-              state: STATE.MOVE,
-              elapsed: 0.0,
-              done: selectedEntity.getData('moveSpeed'),
-              x: i,
-              y: j
-            };
-            selectedEntity.getData('actionsDeque').push(moveTo);
-          }
-        })
-          tile.clearTint();
-        })
-        .on('pointerout', () => {
-          tile.clearTint();
-        })
-        .on('mouseOver', () => {
-          tile.setTint(0x00ff00);
-        });
-        */
 
       grid[i][j] = tile;
     }
@@ -373,30 +392,36 @@ function create() {
   player = this.add.sprite(0, 0, 'homeless_guy');
   player2 = this.add.sprite(0, 0, 'homeless_guy');
 
-  globals.selectableEntities.push(player, player2);
+  // initialize entities
+  globals.entities.add(player);
+  globals.entities.add(player2);
 
-  // initialize all selectable entities
-  globals.selectableEntities.forEach((entity) => {
+  globals.entities.forEach((entity) => {
     setEntityData(entity); // initialize data values
     entity.setInteractive();
+  });
 
-    entity.on('mouseDown', (pointer) => {
-      if (pointer.leftButtonDown()) {
-        selectedEntity = entity;
-      }
-    });
-    function mouseOver() {
-      graphics.lineStyle(2, 0x4CC417, 0.7);
+  // initialize all selectable entities
+  globals.selectableEntities.push(player, player2);
+  globals.selectableEntities.forEach((entity) => {
+    function drawClicked() {
+      graphics.lineStyle(2, 0x4cc417, 1.0);
       graphics.strokeCircle(entity.x, entity.y, tileSize / 2);
     }
-    entity.on('mouseOver', (pointer) => {
-      globals.drawFuncs.add(mouseOver);
-    });
-    entity.on('mouseOut', (pointer) => {
-      globals.drawFuncs.delete(mouseOver);
-    });
-
-    globals.entities.add(entity);
+    entity
+      .on('mouseDown', (pointer) => {
+        if (pointer.leftButtonDown()) {
+          selectedEntity = entity;
+          globals.drawFuncs.add(drawClicked);
+        }
+      })
+      .on('mouseUp', (pointer) => {
+        globals.drawFuncs.delete(drawClicked);
+      })
+      .on('mouseOver', (pointer) => {})
+      .on('mouseOut', (pointer) => {
+        globals.drawFuncs.delete(drawClicked);
+      });
   });
   player2.data.values.x = 3;
   player2.data.values.y = 2;
@@ -415,6 +440,7 @@ function create() {
   text = this.add
     .text(10, 10, 'Cursors to move', { font: '16px Courier', fill: '#ffffff' })
     .setScrollFactor(0);
+  // scene.add.text(400, 400, 'Paused', { font: '16px Courier', fill: '#ffffff' })
 }
 
 // Handle the camera scrolling
@@ -485,7 +511,7 @@ function update(time, delta) {
     graphics.clear();
 
     // draw selection rect
-    graphics.lineStyle(2, 0xE5E4E2, 1.0); // width, color, alpha
+    graphics.lineStyle(2, 0xe5e4e2, 1.0); // width, color, alpha
     graphics.strokeRect(
       grid2world(selectedEntity.getData('x')) - selectedEntity.width / 2.0,
       grid2world(selectedEntity.getData('y')) - selectedEntity.height / 2.0,
@@ -494,7 +520,7 @@ function update(time, delta) {
     );
 
     // mouse over rect
-    graphics.lineStyle(2, 0xFFFFFF, 1.0); // width, color, alpha
+    graphics.lineStyle(2, 0xffffff, 1.0); // width, color, alpha
     graphics.strokeRect(
       tileSize * gridPosX + offset,
       tileSize * gridPosY + offset,
@@ -507,15 +533,16 @@ function update(time, delta) {
       func();
     });
 
-    globals.entities.forEach(entity => drawEntityActions(entity));
-
     // handle all Entities
     globals.entities.forEach((entity) => {
-      const deque = entity.getData('actionsDeque');
+      // draw indicators for actions
+      drawEntityActions(entity);
+
+      const values = entity.data.values;
+      const deque = values.actionsDeque;
 
       if (deque.length > 0) {
         const action = deque.peek();
-        const values = entity.data.values;
 
         const direction = action.direction;
 
@@ -527,12 +554,12 @@ function update(time, delta) {
             values.y += action.y;
             entity.anims.play('walk_right', true);
 
-            if (direction != null && direction != values.direction) {
+            if (direction !== null && direction !== values.direction) {
               entity.flipX = !entity.flipX;
               values.direction = direction;
             }
           } else if (action.state === STATE.PUSHED) {
-            entity.data.set('state', STATE.PUSHED);
+            values.state = STATE.PUSHED;
           }
           const extraTime = action.elapsed - action.done;
 
@@ -547,7 +574,7 @@ function update(time, delta) {
           action.elapsed += dt;
         }
       } else {
-        entity.data.set('state', STATE.IDLE);
+        values.state = STATE.IDLE;
         entity.anims.play('idle', true);
       }
     });
