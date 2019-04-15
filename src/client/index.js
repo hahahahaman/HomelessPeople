@@ -40,7 +40,7 @@ const STATE = {
 const DIRECTION = {
   LEFT: 'left',
   RIGHT: 'right'
-}
+};
 
 let player;
 let player2;
@@ -66,8 +66,10 @@ function preload() {
   });
   this.load.image('bg', 'assets/wallpaper.jpg');
   this.load.image('grass', 'assets/grass.jpg');
-  this.load.spritesheet('homeless_guy', 'assets/homeless_right.png',
-    { frameWidth: 50, frameHeight: 50});
+  this.load.spritesheet('homeless_guy', 'assets/homeless_right.png', {
+    frameWidth: 50,
+    frameHeight: 50
+  });
 }
 
 function disableEntities() {
@@ -118,13 +120,19 @@ function setEntityData(
 }
 
 function moveAction(x, y) {
+  let direction = null;
+  if (x < 0) {
+    direction = DIRECTION.LEFT;
+  } else if (x > 0) {
+    direction = DIRECTION.RIGHT;
+  }
   return {
     state: STATE.MOVE,
     elapsed: 0.0,
     done: selectedEntity.getData('moveSpeed'),
     x,
     y,
-    direction: x != 0 ? (x == -1 ? DIRECTION.LEFT : DIRECTION.RIGHT) : null
+    direction
   };
 }
 
@@ -282,6 +290,17 @@ function create() {
     })
     .on('keydown-D', (event) => {
       pushAction(selectedEntity, moveAction(1, 0)); // right
+    })
+    // remove actions from actions deque
+    .on('keydown-Z', (event) => {
+      selectedEntity.getData('actionsDeque').shift(); // remove from front
+    })
+    .on('keydown-X', (event) => {
+      selectedEntity.getData('actionsDeque').pop(); // remove from back
+    })
+    .on('keydown-C', (event) => {
+      // clear actions
+      selectedEntity.getData('actionsDeque').clear();
     });
 
   //  If a Game Object is clicked on, this event is fired.
@@ -329,17 +348,23 @@ function create() {
 
   this.anims.create({
     key: 'idle',
-    frames: this.anims.generateFrameNumbers('homeless_guy', { start: 0, end: 3 }),
+    frames: this.anims.generateFrameNumbers('homeless_guy', {
+      start: 0,
+      end: 3
+    }),
     frameRate: 6,
     repeat: -1 // Tells the animation to repeat, -1
-  })
+  });
 
   this.anims.create({
     key: 'walk_right',
-    frames: this.anims.generateFrameNumbers('homeless_guy', { start: 4, end: 7 }),
+    frames: this.anims.generateFrameNumbers('homeless_guy', {
+      start: 4,
+      end: 7
+    }),
     frameRate: 6,
     repeat: -1 // Tells the animation to repeat, -1
-  })
+  });
 
   player = this.add.sprite(1920, 1080, 'homeless_guy');
   player.setInteractive();
@@ -485,13 +510,13 @@ function update(time, delta) {
 
     // handle all Entities
     globals.entities.forEach((entity) => {
-      const deque = entity.getData('actionsDeque');   
+      const deque = entity.getData('actionsDeque');
 
       if (deque.length > 0) {
         const action = deque.peek();
         const values = entity.data.values;
-        
-        let direction = action.direction;
+
+        const direction = action.direction;
 
         // time elapsed
         if (action.elapsed > action.done) {
@@ -499,13 +524,12 @@ function update(time, delta) {
             entity.data.set('state', STATE.MOVE);
             values.x += action.x;
             values.y += action.y;
-            entity.anims.play('walk_right', true)
+            entity.anims.play('walk_right', true);
 
             if (direction != null && direction != values.direction) {
-              entity.flipX = !entity.flipX; 
-              values.direction = direction
+              entity.flipX = !entity.flipX;
+              values.direction = direction;
             }
-            
           } else if (action.state === STATE.PUSHED) {
             entity.data.set('state', STATE.PUSHED);
           }
@@ -526,11 +550,6 @@ function update(time, delta) {
         entity.anims.play('idle', true);
       }
     });
-
-    /*   for (let i = 0; i < rects.length; i++) {
-    graphics.strokeRectShape(rects[i]);
-    graphics.fillRectShape(rects[i]);
-  } */
 
     // set debug text
     text.setText([
