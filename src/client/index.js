@@ -69,8 +69,8 @@ let gridMap;
 let paused = false;
 const offset = globals.OFFSET;
 const tileSize = globals.TILE_SIZE;
-let worldHeight; let
-  worldWidth;
+let worldHeight;
+let worldWidth;
 let phaser;
 
 function preload() {
@@ -379,6 +379,22 @@ function create() {
       selectedEntity.data.values.end_x = selectedEntity.data.values.x;
       selectedEntity.data.values.end_y = selectedEntity.data.values.y;
       selectedEntity.getData('actionsDeque').clear();
+    })
+    .on('keydown-ONE', () => {
+      if (selectedEntity === globals.selectableEntities[0]) {
+        phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+      } else {
+        selectedEntity = globals.selectableEntities[0];
+      }
+      console.log(1);
+    })
+    .on('keydown-TWO', () => {
+      if (selectedEntity === globals.selectableEntities[1]) {
+        phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+      } else {
+        selectedEntity = globals.selectableEntities[1];
+      }
+      console.log(2);
     });
 
   //  If a Game Object is clicked on, this event is fired.
