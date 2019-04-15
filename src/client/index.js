@@ -420,7 +420,6 @@ function create() {
       } else {
         selectedEntity = globals.selectableEntities[0];
       }
-      console.log(1);
     })
     .on('keydown-TWO', () => {
       if (selectedEntity === globals.selectableEntities[1]) {
@@ -428,7 +427,6 @@ function create() {
       } else {
         selectedEntity = globals.selectableEntities[1];
       }
-      console.log(2);
     })
     .on('keydown-SPACE', (event) => {
       // center on selected entity
