@@ -37,6 +37,11 @@ const STATE = {
   PUSHED: 'pushed'
 };
 
+const DIRECTION = {
+  LEFT: 'left',
+  RIGHT: 'right'
+}
+
 let player;
 let player2;
 let cursors;
@@ -61,6 +66,8 @@ function preload() {
   });
   this.load.image('bg', 'assets/wallpaper.jpg');
   this.load.image('grass', 'assets/grass.jpg');
+  this.load.spritesheet('homeless_guy', 'assets/homeless_right.png',
+    { frameWidth: 50, frameHeight: 50});
 }
 
 function disableEntities() {
@@ -85,6 +92,7 @@ function setEntityData(
     x = 0,
     y = 0,
     moveSpeed = 0.5,
+    direction = DIRECTION.RIGHT,
     state = STATE.IDLE,
     actionsDeque = new Deque()
   } = {}
@@ -94,6 +102,7 @@ function setEntityData(
     .set('x', x)
     .set('y', y)
     .set('moveSpeed', moveSpeed) // seconds per block
+    .set('direction', direction)
     .set('state', state)
     .set('actionTimeElapsed', 0)
     .set('actionsDeque', actionsDeque);
@@ -114,7 +123,8 @@ function moveAction(x, y) {
     elapsed: 0.0,
     done: selectedEntity.getData('moveSpeed'),
     x,
-    y
+    y,
+    direction: x != 0 ? (x == -1 ? DIRECTION.LEFT : DIRECTION.RIGHT) : null
   };
 }
 
@@ -272,7 +282,21 @@ function create() {
 
   gridMap = makeGrid(this, 5, 10, globals.OFFSET, globals.TILE_SIZE);
 
-  player = this.add.sprite(1920, 1080, 'dude');
+  this.anims.create({
+    key: 'idle',
+    frames: this.anims.generateFrameNumbers('homeless_guy', { start: 0, end: 3 }),
+    frameRate: 6,
+    repeat: -1 // Tells the animation to repeat, -1
+  })
+
+  this.anims.create({
+    key: 'walk_right',
+    frames: this.anims.generateFrameNumbers('homeless_guy', { start: 4, end: 7 }),
+    frameRate: 6,
+    repeat: -1 // Tells the animation to repeat, -1
+  })
+
+  player = this.add.sprite(1920, 1080, 'homeless_guy');
   player.setInteractive();
   setEntityData(player);
   function selectEntity(entity) {
@@ -293,7 +317,7 @@ function create() {
   player.on('mouseOut', (pointer) => {
     globals.drawFuncs.delete(mouseOverPlayer);
   });
-  player2 = this.add.sprite(0, 0, 'dude');
+  player2 = this.add.sprite(0, 0, 'homeless_guy');
   player2.setInteractive();
   setEntityData(player2, { x: 5, y: 5 });
   player2.on('mouseDown', (pointer) => {
@@ -355,6 +379,7 @@ function handleScrolling(_this, camera, dt) {
 }
 
 const vel = 500;
+
 function update(time, delta) {
   const dt = delta / 1000;
   const camera = this.cameras.main;
@@ -413,7 +438,8 @@ function update(time, delta) {
 
     // handle all Entities
     globals.entities.forEach((entity) => {
-      const deque = entity.getData('actionsDeque');
+      const deque = entity.getData('actionsDeque');   
+
       if (deque.length > 0) {
         let movePosX = grid2world(entity.getData('x'));
         let movePosY = grid2world(entity.getData('y'));
@@ -458,8 +484,8 @@ function update(time, delta) {
         });
         const action = deque.peek();
         const values = entity.data.values;
-        const x = values.x;
-        const y = values.y;
+        
+        let direction = action.direction;
 
         // time elapsed
         if (action.elapsed > action.done) {
@@ -467,6 +493,13 @@ function update(time, delta) {
             entity.data.set('state', STATE.MOVE);
             values.x += action.x;
             values.y += action.y;
+            entity.anims.play('walk_right', true)
+
+            if (direction != null && direction != values.direction) {
+              entity.flipX = !entity.flipX; 
+              values.direction = direction
+            }
+            
           } else if (action.state === STATE.PUSHED) {
             entity.data.set('state', STATE.PUSHED);
           }
@@ -484,6 +517,7 @@ function update(time, delta) {
         }
       } else {
         entity.data.set('state', STATE.IDLE);
+        entity.anims.play('idle', true);
       }
     });
 
