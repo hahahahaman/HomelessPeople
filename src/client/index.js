@@ -1,8 +1,8 @@
 import './index.css';
 import Phaser from 'phaser';
 
+// Data structures from: http://www.collectionsjs.com/
 import Deque from 'collections/deque';
-import Set from 'collections/set';
 
 import * as globals from './globals';
 
@@ -346,6 +346,10 @@ function create() {
 
   gridMap = makeGrid(this, 5, 10, globals.OFFSET, globals.TILE_SIZE);
 
+  //--------------------------------------------
+  // Players
+  //--------------------------------------------
+
   this.anims.create({
     key: 'idle',
     frames: this.anims.generateFrameNumbers('homeless_guy', {
@@ -366,41 +370,36 @@ function create() {
     repeat: -1 // Tells the animation to repeat, -1
   });
 
-  player = this.add.sprite(1920, 1080, 'homeless_guy');
-  player.setInteractive();
-  setEntityData(player);
-  function selectEntity(entity) {
-    selectedEntity = entity;
-  }
-  player.on('mouseDown', (pointer) => {
-    if (pointer.leftButtonDown()) {
-      selectEntity(player);
-    }
-  });
-  function mouseOverPlayer() {
-    graphics.lineStyle(2, 0x11aa11, 0.5);
-    graphics.strokeCircle(player.x, player.y, tileSize / 2);
-  }
-  player.on('mouseOver', (pointer) => {
-    globals.drawFuncs.add(mouseOverPlayer);
-  });
-  player.on('mouseOut', (pointer) => {
-    globals.drawFuncs.delete(mouseOverPlayer);
-  });
+  player = this.add.sprite(0, 0, 'homeless_guy');
   player2 = this.add.sprite(0, 0, 'homeless_guy');
-  player2.setInteractive();
-  setEntityData(player2, { x: 5, y: 5 });
-  player2.on('mouseDown', (pointer) => {
-    if (pointer.leftButtonDown()) {
-      selectEntity(player2);
+
+  globals.selectableEntities.push(player, player2);
+
+  // initialize all selectable entities
+  globals.selectableEntities.forEach((entity) => {
+    setEntityData(entity); // initialize data values
+    entity.setInteractive();
+
+    entity.on('mouseDown', (pointer) => {
+      if (pointer.leftButtonDown()) {
+        selectedEntity = entity;
+      }
+    });
+    function mouseOver() {
+      graphics.lineStyle(2, 0x4CC417, 0.7);
+      graphics.strokeCircle(entity.x, entity.y, tileSize / 2);
     }
+    entity.on('mouseOver', (pointer) => {
+      globals.drawFuncs.add(mouseOver);
+    });
+    entity.on('mouseOut', (pointer) => {
+      globals.drawFuncs.delete(mouseOver);
+    });
+
+    globals.entities.add(entity);
   });
-
-  globals.entities.add(player);
-  globals.entities.add(player2);
-
-  globals.selectableEntities.push(player);
-  globals.selectableEntities.push(player2);
+  player2.data.values.x = 3;
+  player2.data.values.y = 2;
 
   selectedEntity = player;
 
@@ -485,8 +484,8 @@ function update(time, delta) {
 
     graphics.clear();
 
-    // draw selection circle
-    graphics.lineStyle(2, 0xffffff, 0.7); // width, color, alpha
+    // draw selection rect
+    graphics.lineStyle(2, 0xE5E4E2, 1.0); // width, color, alpha
     graphics.strokeRect(
       grid2world(selectedEntity.getData('x')) - selectedEntity.width / 2.0,
       grid2world(selectedEntity.getData('y')) - selectedEntity.height / 2.0,
@@ -494,6 +493,8 @@ function update(time, delta) {
       selectedEntity.height
     );
 
+    // mouse over rect
+    graphics.lineStyle(2, 0xFFFFFF, 1.0); // width, color, alpha
     graphics.strokeRect(
       tileSize * gridPosX + offset,
       tileSize * gridPosY + offset,
@@ -521,7 +522,7 @@ function update(time, delta) {
         // time elapsed
         if (action.elapsed > action.done) {
           if (action.state === STATE.MOVE) {
-            entity.data.set('state', STATE.MOVE);
+            values.state = STATE.MOVE;
             values.x += action.x;
             values.y += action.y;
             entity.anims.play('walk_right', true);
