@@ -6,6 +6,19 @@ import Deque from 'collections/deque';
 
 import * as globals from './globals';
 
+let world = [
+  ['1', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', '2'],
+];
+
 const config = {
   type: Phaser.AUTO,
   scale: {
@@ -54,6 +67,7 @@ let gridMap;
 let paused = false;
 const offset = globals.OFFSET;
 const tileSize = globals.TILE_SIZE;
+let worldHeight, worldWidth;
 let phaser;
 
 function preload() {
@@ -96,6 +110,8 @@ function setEntityData(
   {
     x = 0,
     y = 0,
+    end_x = 0,
+    end_y = 0,
     moveSpeed = 0.5,
     direction = DIRECTION.RIGHT,
     state = STATE.IDLE,
@@ -107,6 +123,8 @@ function setEntityData(
   obj.data
     .set('x', x)
     .set('y', y)
+    .set('end_x', end_x)
+    .set('end_y', end_y)
     .set('moveSpeed', moveSpeed) // seconds per block
     .set('direction', direction)
     .set('state', state)
@@ -123,13 +141,24 @@ function setEntityData(
   });
 }
 
-function moveAction(x, y) {
+function moveAction(entity, x, y) {
   let direction = null;
   if (x < 0) {
     direction = DIRECTION.LEFT;
   } else if (x > 0) {
     direction = DIRECTION.RIGHT;
   }
+
+  if (
+    entity.data.values.end_x + x >= worldWidth || 
+    entity.data.values.end_x + x < 0  ||
+    entity.data.values.end_y + y >= worldHeight ||
+    entity.data.values.end_y + y < 0
+    ) return null;
+  
+  entity.data.values.end_x += x;
+  entity.data.values.end_y += y;
+
   return {
     state: STATE.MOVE,
     elapsed: 0.0,
@@ -141,7 +170,7 @@ function moveAction(x, y) {
 }
 
 function pushAction(entity, action) {
-  entity.getData('actionsDeque').push(action);
+  if (action) entity.getData('actionsDeque').push(action);
 }
 
 function drawEntityActions(entity) {
@@ -299,26 +328,30 @@ function create() {
   // WASD input
   this.input.keyboard
     .on('keydown-W', (event) => {
-      pushAction(selectedEntity, moveAction(0, -1)); // up is negative
+      pushAction(selectedEntity, moveAction(selectedEntity, 0, -1)); // up is negative
     })
     .on('keydown-S', (event) => {
-      pushAction(selectedEntity, moveAction(0, 1)); // down
+      pushAction(selectedEntity, moveAction(selectedEntity, 0, 1)); // down
     })
     .on('keydown-A', (event) => {
-      pushAction(selectedEntity, moveAction(-1, 0)); // left
+      pushAction(selectedEntity, moveAction(selectedEntity, -1, 0)); // left
     })
     .on('keydown-D', (event) => {
-      pushAction(selectedEntity, moveAction(1, 0)); // right
+      pushAction(selectedEntity, moveAction(selectedEntity, 1, 0)); // right
     })
     // remove actions from actions deque
     .on('keydown-Z', (event) => {
       selectedEntity.getData('actionsDeque').shift(); // remove from front
     })
     .on('keydown-X', (event) => {
-      selectedEntity.getData('actionsDeque').pop(); // remove from back
+      const last_action = selectedEntity.getData('actionsDeque').pop(); // remove from back
+      selectedEntity.data.values.end_x -= last_action.x
+      selectedEntity.data.values.end_y -= last_action.y
     })
     .on('keydown-C', (event) => {
       // clear actions
+      selectedEntity.data.values.end_x = selectedEntity.data.values.x
+      selectedEntity.data.values.end_y = selectedEntity.data.values.y
       selectedEntity.getData('actionsDeque').clear();
     });
 
@@ -363,7 +396,10 @@ function create() {
   cursors = this.input.keyboard.createCursorKeys();
   keys = this.input.keyboard.addKeys('W,A,S,D');
 
-  gridMap = makeGrid(this, 5, 10, globals.OFFSET, globals.TILE_SIZE);
+  // Make grid based on world size.
+  worldHeight = world.length;
+  worldWidth = world[0].length;
+  gridMap = makeGrid(this, worldWidth, worldHeight, globals.OFFSET, globals.TILE_SIZE);
 
   //--------------------------------------------
   // Players
@@ -423,8 +459,24 @@ function create() {
         globals.drawFuncs.delete(drawClicked);
       });
   });
-  player2.data.values.x = 3;
-  player2.data.values.y = 2;
+
+  // Position Players based on world data.
+  for (let y = 0; y < world.length; ++y) {
+    for (let x = 0; x < world[y].length; ++x) {
+      if (world[y][x] === '1') {
+        player.data.values.x = x;
+        player.data.values.y = y;
+        player.data.values.end_x = x;
+        player.data.values.end_y = y;
+      } 
+      if (world[y][x] === '2') {
+        player2.data.values.x = x;
+        player2.data.values.y = y;
+        player2.data.values.end_x = x;
+        player2.data.values.end_y = y;
+      }
+    }
+  }
 
   selectedEntity = player;
 
