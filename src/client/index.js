@@ -192,7 +192,7 @@ function setEntityData(
     .set('end_y', end_y)
     .set('moveSpeed', moveSpeed) // seconds per block
     .set('direction', direction)
-    .set('color')
+    .set('color', color)
     .set('state', state)
     .set('actionsDeque', actionsDeque)
     .set('text', text)
@@ -208,7 +208,7 @@ function setEntityData(
   });
 }
 
-function moveAction(entity, x, y) {
+function makeMoveAction(entity, x, y) {
   let direction = null;
   let invalid = false;
 
@@ -244,6 +244,16 @@ function moveAction(entity, x, y) {
     x,
     y,
     direction
+  };
+}
+
+function makePushAction(entity, x, y) {
+  return {
+    state: STATE.PUSH,
+    elapsed: 0.0,
+    done: 2.0,
+    x,
+    y,
   };
 }
 
@@ -411,27 +421,25 @@ function create() {
         enableGrid(gridMap);
         enableEntities();
       }
-    })
-    .on('keydown-SPACE', (event) => {
-      // center on selected entity
-      if (selectedEntity) {
-        this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
-      }
     });
 
-  // WASD input
+  // https://rexrainbow.github.io/phaser3-rex-notes/docs/site/keyboardevents/
+  // input for entity
   this.input.keyboard
     .on('keydown-W', (event) => {
-      pushAction(selectedEntity, moveAction(selectedEntity, 0, -1)); // up is negative
+      pushAction(selectedEntity, makeMoveAction(selectedEntity, 0, -1)); // up is negative
     })
     .on('keydown-S', (event) => {
-      pushAction(selectedEntity, moveAction(selectedEntity, 0, 1)); // down
+      pushAction(selectedEntity, makeMoveAction(selectedEntity, 0, 1)); // down
     })
     .on('keydown-A', (event) => {
-      pushAction(selectedEntity, moveAction(selectedEntity, -1, 0)); // left
+      pushAction(selectedEntity, makeMoveAction(selectedEntity, -1, 0)); // left
     })
     .on('keydown-D', (event) => {
-      pushAction(selectedEntity, moveAction(selectedEntity, 1, 0)); // right
+      pushAction(selectedEntity, makeMoveAction(selectedEntity, 1, 0)); // right
+    })
+    .on('keydown-Q', () => {
+      // hightlight pushable positions
     })
     // remove actions from actions deque
     /*
@@ -456,7 +464,6 @@ function create() {
       } else {
         selectedEntity = globals.selectableEntities[0];
       }
-      console.log(1);
     })
     .on('keydown-TWO', () => {
       if (selectedEntity === globals.selectableEntities[1]) {
@@ -464,7 +471,12 @@ function create() {
       } else {
         selectedEntity = globals.selectableEntities[1];
       }
-      console.log(2);
+    })
+    .on('keydown-SPACE', (event) => {
+      // center on selected entity
+      if (selectedEntity) {
+        this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+      }
     });
 
   //  If a Game Object is clicked on, this event is fired.
