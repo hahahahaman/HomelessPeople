@@ -163,7 +163,7 @@ function setEntityRock(
   obj.y = grid2world(y);
 }
 
-function setEntityData(
+function setEntityPlayer(
   obj,
   {
     name = 'obj_player',
@@ -227,7 +227,7 @@ function makeMoveAction(entity, x, y) {
 
   obj_world[entity.data.values.end_y + y][entity.data.values.end_x + x].forEach((obj) => {
     if (obj.data.values.name === 'obj_rock' ||
-        obj.data.values.name === 'obj_player') {
+        (obj != entity && obj.data.values.name === 'obj_player')) {
       invalid = true;
     }
   })
@@ -563,7 +563,7 @@ function create() {
   globals.entities.add(player2);
 
   globals.entities.forEach((entity) => {
-    setEntityData(entity); // initialize data values
+    setEntityPlayer(entity); // initialize data values
     entity.setInteractive();
   });
 
