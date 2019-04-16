@@ -3,22 +3,23 @@ import Phaser from 'phaser';
 
 // Data structures from: http://www.collectionsjs.com/
 import Deque from 'collections/deque';
+import List from 'collections/list';
 
 import * as globals from './globals';
 
 let world = [
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', '1', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', '2', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+  [ 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w' ],
+  [ 'w', '1', 'a', 'a', 'a', 'a', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'a', 'w', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'a', 'w', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'a', 'w', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'w', 'a', 'a', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'w', 'a', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'w' ],
+  [ 'w', 'a', 'a', 'a', 'a', 'a', '2', 'w' ],
+  [ 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w' ],
 ];
 
 let bg_world = [
@@ -35,6 +36,15 @@ let bg_world = [
   [ '15', '61', '54', '55', '54', '53', '46', '15' ],
   [ '15', '15', '15', '15', '15', '15', '15', '15' ],
 ];
+
+let obj_world = []
+for (let h = 0; h < world.length; ++h) {
+  obj_world.push([])
+  for (let w = 0; w < world[h].length; ++w) {
+    obj_world[h].push(new List())
+  }
+}
+
 
 
 const config = {
@@ -91,6 +101,9 @@ let worldHeight;
 let worldWidth;
 let phaser;
 
+let rocks = [];
+
+
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -112,6 +125,9 @@ function preload() {
   for (let i = 1; i <= 64; ++i) {
     this.load.image('bg_'+("0" + i).slice(-2), 'assets/bg_tiles/generic-rpg-tile' + ("0" + i).slice(-2) +'.png')
   }
+  for (let i = 1; i < 4; ++i) {
+    this.load.image('rock_'+i, 'assets/rock' + i + '.png'); 
+  }
 
   phaser = this;
 }
@@ -132,9 +148,25 @@ function grid2world(val) {
   return offset + val * tileSize;
 }
 
+function setEntityRock(
+  obj,
+  {
+    name = 'obj_rock',
+    x = 0,
+    y = 0
+  } = {}
+) {
+  obj.setDataEnabled();
+  obj.data
+    .set('name', name)
+  obj.x = grid2world(x);
+  obj.y = grid2world(y);
+}
+
 function setEntityData(
   obj,
   {
+    name = 'obj_player',
     x = 0,
     y = 0,
     end_x = 0,
@@ -153,6 +185,7 @@ function setEntityData(
 ) {
   obj.setDataEnabled();
   obj.data
+    .set('name', name)
     .set('x', x)
     .set('y', y)
     .set('end_x', end_x)
@@ -177,6 +210,8 @@ function setEntityData(
 
 function moveAction(entity, x, y) {
   let direction = null;
+  let invalid = false;
+
   if (x < 0) {
     direction = DIRECTION.LEFT;
   } else if (x > 0) {
@@ -189,6 +224,15 @@ function moveAction(entity, x, y) {
     || entity.data.values.end_y + y >= worldHeight
     || entity.data.values.end_y + y < 0
   ) return null;
+
+  obj_world[entity.data.values.end_y + y][entity.data.values.end_x + x].forEach((obj) => {
+    if (obj.data.values.name === 'obj_rock' ||
+        obj.data.values.name === 'obj_player') {
+      invalid = true;
+    }
+  })
+
+  if (invalid) return null;
 
   entity.data.values.end_x += x;
   entity.data.values.end_y += y;
@@ -537,7 +581,8 @@ function create() {
       });
   });
 
-  // Position Players based on world data.
+  // Position Players based on world data. 
+  // + Parse world data into entities.
   for (let y = 0; y < world.length; ++y) {
     for (let x = 0; x < world[y].length; ++x) {
       if (world[y][x] === '1') {
@@ -545,15 +590,24 @@ function create() {
         player.data.values.y = y;
         player.data.values.end_x = x;
         player.data.values.end_y = y;
+        obj_world[y][x].push(player);
       }
       if (world[y][x] === '2') {
         player2.data.values.x = x;
         player2.data.values.y = y;
         player2.data.values.end_x = x;
         player2.data.values.end_y = y;
+        obj_world[y][x].push(player2);
+      }
+      if (world[y][x] === 'w') {
+        console.log("hit world") 
+        const rock = this.add.sprite(0, 0, 'rock_' + Phaser.Math.Between(1, 3)).setScale(1.5);
+        setEntityRock(rock, { x : x, y : y }); 
+        obj_world[y][x].push(rock);
       }
     }
   }
+  console.log(obj_world)
 
   selectedEntity = player;
 
@@ -697,8 +751,26 @@ function update(time, delta) {
         if (action.elapsed > action.done) {
           if (action.state === STATE.MOVE) {
             values.state = STATE.MOVE;
+            
+            let stall_action = false;
+
+            obj_world[values.y + action.y][values.x + action.x].forEach((obj) => {
+              if (obj != entity && obj.data.values.name == 'obj_player') {
+                stall_action = true;
+              }
+            })
+
+            if (stall_action) {
+              return;
+            }
+
+            obj_world[values.y][values.x].delete(entity);
+
             values.x += action.x;
             values.y += action.y;
+
+            obj_world[values.y][values.x].push(entity);
+
             entity.anims.play('walk_right', true);
 
             if (direction !== null && direction !== values.direction) {
