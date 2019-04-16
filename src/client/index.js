@@ -37,11 +37,11 @@ const bgWorldArray = [
   ['15', '15', '15', '15', '15', '15', '15', '15']
 ];
 
-const obj_world = [];
+const objWorldArray = [];
 for (let h = 0; h < worldArray.length; ++h) {
-  obj_world.push([]);
+  objWorldArray.push([]);
   for (let w = 0; w < worldArray[h].length; ++w) {
-    obj_world[h].push(new List());
+    objWorldArray[h].push(new List());
   }
 }
 
@@ -215,11 +215,10 @@ function makeMoveAction(entity, x, y) {
     || entity.data.values.end_y + y < 0
   ) return null;
 
-  obj_world[entity.data.values.end_y + y][entity.data.values.end_x + x].forEach(
+  objWorldArray[entity.data.values.end_y + y][entity.data.values.end_x + x].forEach(
     (obj) => {
       if (
         obj.data.values.name === 'obj_rock'
-        || (obj != entity && obj.data.values.name === 'obj_player')
       ) {
         invalid = true;
       }
@@ -725,14 +724,14 @@ function create() {
         player.data.values.y = y;
         player.data.values.end_x = x;
         player.data.values.end_y = y;
-        obj_world[y][x].push(player);
+        objWorldArray[y][x].push(player);
       }
       if (worldArray[y][x] === '2') {
         player2.data.values.x = x;
         player2.data.values.y = y;
         player2.data.values.end_x = x;
         player2.data.values.end_y = y;
-        obj_world[y][x].push(player2);
+        objWorldArray[y][x].push(player2);
       }
       if (worldArray[y][x] === 'w') {
         console.log('hit world');
@@ -740,11 +739,11 @@ function create() {
           .sprite(0, 0, `rock_${Phaser.Math.Between(1, 3)}`)
           .setScale(1.5);
         setEntityRock(rock, { x, y });
-        obj_world[y][x].push(rock);
+        objWorldArray[y][x].push(rock);
       }
     }
   }
-  console.log(obj_world);
+  console.log(objWorldArray);
 
   selectedEntity = player;
 
@@ -942,8 +941,8 @@ function update(time, delta) {
 
             let stall_action = false;
 
-            obj_world[values.y + action.y][values.x + action.x].forEach((obj) => {
-              if (obj != entity && obj.data.values.name == 'obj_player') {
+            objWorldArray[values.y + action.y][values.x + action.x].forEach((obj) => {
+              if (obj !== entity && obj.data.values.name === 'obj_player') {
                 stall_action = true;
               }
             });
@@ -952,12 +951,12 @@ function update(time, delta) {
               return;
             }
 
-            obj_world[values.y][values.x].delete(entity);
+            objWorldArray[values.y][values.x].delete(entity);
 
             values.x += action.x;
             values.y += action.y;
 
-            obj_world[values.y][values.x].push(entity);
+            objWorldArray[values.y][values.x].push(entity);
 
             entity.anims.play('walk_right', true);
 
