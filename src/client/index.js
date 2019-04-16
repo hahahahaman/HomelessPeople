@@ -6,36 +6,35 @@ import Deque from 'collections/deque';
 
 import * as globals from './globals';
 
-let world = [
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', '1', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', '2', 'a' ],
-  [ 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a' ],
+const worldArray = [
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', '1', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', '2', 'a'],
+  ['a', 'a', 'a', 'a', 'a', 'a', 'a', 'a']
 ];
 
-let bg_world = [
-  [ '15', '15', '15', '15', '15', '15', '15', '15' ],
-  [ '15', '59', '04', '06', '02', '02', '60', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '48', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '49', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '50', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '49', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '48', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '47', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '48', '15' ],
-  [ '15', '14', '51', '51', '51', '51', '49', '15' ],
-  [ '15', '61', '54', '55', '54', '53', '46', '15' ],
-  [ '15', '15', '15', '15', '15', '15', '15', '15' ],
+const bgWorldArray = [
+  ['15', '15', '15', '15', '15', '15', '15', '15'],
+  ['15', '59', '04', '06', '02', '02', '60', '15'],
+  ['15', '14', '51', '51', '51', '51', '48', '15'],
+  ['15', '14', '51', '51', '51', '51', '49', '15'],
+  ['15', '14', '51', '51', '51', '51', '50', '15'],
+  ['15', '14', '51', '51', '51', '51', '49', '15'],
+  ['15', '14', '51', '51', '51', '51', '48', '15'],
+  ['15', '14', '51', '51', '51', '51', '47', '15'],
+  ['15', '14', '51', '51', '51', '51', '48', '15'],
+  ['15', '14', '51', '51', '51', '51', '49', '15'],
+  ['15', '61', '54', '55', '54', '53', '46', '15'],
+  ['15', '15', '15', '15', '15', '15', '15', '15']
 ];
-
 
 const config = {
   type: Phaser.AUTO,
@@ -83,14 +82,15 @@ let levelTime = 0.0;
 let pausedText;
 let selectedEntity;
 let graphics;
-let gridMap;
+let gridWorld;
+let entityWorld;
 let paused = false;
+let eKeyObj;
 const offset = globals.OFFSET;
 const tileSize = globals.TILE_SIZE;
 let worldHeight;
 let worldWidth;
 let phaser;
-
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -110,7 +110,10 @@ function preload() {
   });
 
   for (let i = 1; i <= 64; ++i) {
-    this.load.image('bg_'+("0" + i).slice(-2), 'assets/bg_tiles/generic-rpg-tile' + ("0" + i).slice(-2) +'.png')
+    this.load.image(
+      `bg_${`0${i}`.slice(-2)}`,
+      `assets/bg_tiles/generic-rpg-tile${`0${i}`.slice(-2)}.png`
+    );
   }
 
   phaser = this;
@@ -203,13 +206,23 @@ function makeMoveAction(entity, x, y) {
   };
 }
 
-function makePushAction(entity, x, y) {
+function makePushingAction(entity, x, y) {
   return {
-    state: STATE.PUSH,
+    state: STATE.PUSHING,
     elapsed: 0.0,
     done: 2.0,
     x,
-    y,
+    y
+  };
+}
+
+function makePushedAction(entity, x, y) {
+  return {
+    state: STATE.PUSHED,
+    elapsed: 0.0,
+    done: 0.1,
+    x,
+    y
   };
 }
 
@@ -313,38 +326,81 @@ function drawEntityActions(entity) {
   }
 }
 
-function makeGrid(
+/*
+function checkSpriteSpriteOverlap(spriteA, spriteB) {
+  const boundsA = spriteA.getBounds();
+  const boundsB = spriteB.getBounds();
+
+  return Phaser.Geom.Intersects.RectangleToRectangle(boundsA, boundsB);
+}
+
+function checkRectSpriteOverlap(rect, sprite) {
+  const bounds = sprite.getBounds();
+
+  return Phaser.Geom.Intersects.RectangleToRectangle(rect, bounds);
+}
+*/
+
+function checkPointRectOverlap(x, y, rX, rY, rW, rH) {
+  if (x < rX || x > rX + rW || y < rY || y > rY + rH) return false;
+
+  return true;
+}
+
+// World
+
+function makeGridWorld(
   _this,
   width = 10,
   height = 10,
   offset = 1000,
   tileSize = 50
 ) {
-  const grid = new Array(width);
+  const world = new Array(width);
   for (let i = 0; i < width; i++) {
-    grid[i] = new Array(height);
+    world[i] = new Array(height);
     for (let j = 0; j < height; j++) {
       const tile = _this.add
-        .sprite(offset + i * tileSize, offset + j * tileSize, 'bg_' + bg_world[j][i])
+        .sprite(
+          offset + i * tileSize,
+          offset + j * tileSize,
+          `bg_${bgWorldArray[j][i]}`
+        )
         .setOrigin(0.5)
-        .setScale(3.4)
+        .setScale(3.125)
         .setInteractive();
 
-      grid[i][j] = tile;
+      world[i][j] = tile;
     }
   }
-  return grid;
+  return world;
 }
 
-function disableGrid(grid) {
-  for (let i = 0; i < grid.length; i++) {
-    for (let j = 0; j < grid[i].length; j++) {
-      grid[i][j].disableInteractive();
+function makeEntityWorld(
+  width = 10,
+  height = 10,
+  offset = 1000,
+  tileSize = 50
+) {
+  // grid where each cell is an array
+  const world = new Array(width);
+  for (let i = 0; i < width; i++) {
+    world[i] = new Array(height);
+    for (let j = 0; j < height; j++) {
+      world[i][j] = [];
     }
   }
 }
 
-function enableGrid(grid) {
+function disableWorld(world) {
+  for (let i = 0; i < world.length; i++) {
+    for (let j = 0; j < world[i].length; j++) {
+      world[i][j].disableInteractive();
+    }
+  }
+}
+
+function enableWorld(grid) {
   for (let i = 0; i < grid.length; i++) {
     for (let j = 0; j < grid[i].length; j++) {
       grid[i][j].setInteractive();
@@ -363,21 +419,20 @@ function create() {
   /*
     Handle Input
   */
-  this.input.keyboard
-    .on('keydown-P', (event) => {
-      // pause or unpause
-      paused = !paused;
-      pausedText.setVisible(paused);
-      if (paused) {
-        this.cameras.main.setAlpha(0.8);
-        disableGrid(gridMap);
-        disableEntities();
-      } else {
-        this.cameras.main.setAlpha(1);
-        enableGrid(gridMap);
-        enableEntities();
-      }
-    });
+  this.input.keyboard.on('keydown-P', (event) => {
+    // pause or unpause
+    paused = !paused;
+    pausedText.setVisible(paused);
+    if (paused) {
+      this.cameras.main.setAlpha(0.8);
+      disableWorld(gridWorld);
+      disableEntities();
+    } else {
+      this.cameras.main.setAlpha(1);
+      enableWorld(gridWorld);
+      enableEntities();
+    }
+  });
 
   // https://rexrainbow.github.io/phaser3-rex-notes/docs/site/keyboardevents/
   // input for entity
@@ -393,9 +448,6 @@ function create() {
     })
     .on('keydown-D', (event) => {
       pushAction(selectedEntity, makeMoveAction(selectedEntity, 1, 0)); // right
-    })
-    .on('keydown-Q', () => {
-      // hightlight pushable positions
     })
     // remove actions from actions deque
     /*
@@ -434,6 +486,70 @@ function create() {
         this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
       }
     });
+
+  eKeyObj = phaser.input.keyboard.addKey('E');
+
+  phaser.input.on('pointerdown', (pointer) => {
+    if (pointer.rightButtonDown() && eKeyObj.isDown) {
+      // push action
+      console.log('push');
+
+      // check if in correct position
+      const mouseX = phaser.input.mousePointer.worldX;
+      const mouseY = phaser.input.mousePointer.worldY;
+      const endX = selectedEntity.data.values.end_x;
+      const endY = selectedEntity.data.values.end_y;
+      const x = grid2world(endX);
+      const y = grid2world(endY);
+
+      // up
+      if (
+        endY - 1 >= 0
+        && checkPointRectOverlap(
+          mouseX,
+          mouseY,
+          x - tileSize / 2,
+          y - (3 * tileSize) / 2,
+          tileSize,
+          tileSize
+        )
+      ) {
+        console.log('push up');
+      }
+
+      // down
+      /*
+      if (endY + 1 < worldHeight) {
+        graphics.fillRect(
+          x - tileSize / 2,
+          y + tileSize / 2,
+          tileSize,
+          tileSize
+        );
+      }
+
+      // left
+      if (endX - 1 >= 0) {
+        graphics.fillRect(
+          x - (3 * tileSize) / 2,
+          y - tileSize / 2,
+          tileSize,
+          tileSize
+        );
+      }
+
+      // right
+      if (endX + 1 < worldWidth) {
+        graphics.fillRect(
+          x + tileSize / 2,
+          y - tileSize / 2,
+          tileSize,
+          tileSize
+        );
+      }
+      */
+    }
+  });
 
   //  If a Game Object is clicked on, this event is fired.
   //  We can use it to emit the 'clicked' event on the game object itself.
@@ -477,9 +593,9 @@ function create() {
   keys = this.input.keyboard.addKeys('W,A,S,D');
 
   // Make grid based on world size.
-  worldHeight = world.length;
-  worldWidth = world[0].length;
-  gridMap = makeGrid(
+  worldHeight = worldArray.length;
+  worldWidth = worldArray[0].length;
+  gridWorld = makeGridWorld(
     this,
     worldWidth,
     worldHeight,
@@ -550,15 +666,15 @@ function create() {
   });
 
   // Position Players based on world data.
-  for (let y = 0; y < world.length; ++y) {
-    for (let x = 0; x < world[y].length; ++x) {
-      if (world[y][x] === '1') {
+  for (let y = 0; y < worldArray.length; ++y) {
+    for (let x = 0; x < worldArray[y].length; ++x) {
+      if (worldArray[y][x] === '1') {
         player.data.values.x = x;
         player.data.values.y = y;
         player.data.values.end_x = x;
         player.data.values.end_y = y;
       }
-      if (world[y][x] === '2') {
+      if (worldArray[y][x] === '2') {
         player2.data.values.x = x;
         player2.data.values.y = y;
         player2.data.values.end_x = x;
@@ -686,6 +802,57 @@ function update(time, delta) {
       tileSize,
       tileSize
     );
+
+    if (eKeyObj.isDown) {
+      // draw the UI
+
+      const values = selectedEntity.data.values;
+
+      const endX = values.end_x;
+      const endY = values.end_y;
+      const x = grid2world(endX);
+      const y = grid2world(endY);
+      graphics.fillStyle(0x00ff00, 0.5);
+      // up
+      if (endY - 1 >= 0) {
+        graphics.fillRect(
+          x - tileSize / 2,
+          y - (3 * tileSize) / 2,
+          tileSize,
+          tileSize
+        );
+      }
+
+      // down
+      if (endY + 1 < worldHeight) {
+        graphics.fillRect(
+          x - tileSize / 2,
+          y + tileSize / 2,
+          tileSize,
+          tileSize
+        );
+      }
+
+      // left
+      if (endX - 1 >= 0) {
+        graphics.fillRect(
+          x - (3 * tileSize) / 2,
+          y - tileSize / 2,
+          tileSize,
+          tileSize
+        );
+      }
+
+      // right
+      if (endX + 1 < worldWidth) {
+        graphics.fillRect(
+          x + tileSize / 2,
+          y - tileSize / 2,
+          tileSize,
+          tileSize
+        );
+      }
+    }
 
     // call all UI draw function
     globals.drawFuncs.forEach((func) => {
