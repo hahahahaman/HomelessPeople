@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 // Data structures from: http://www.collectionsjs.com/
 import Deque from 'collections/deque';
 import List from 'collections/list';
+import Set from 'collections/set';
 
 import * as globals from './globals';
 
@@ -37,11 +38,13 @@ const bgWorldArray = [
   ['15', '15', '15', '15', '15', '15', '15', '15']
 ];
 
-const objWorldArray = [];
+// store actual world
+let gridWorld;
+const objWorld = [];
 for (let h = 0; h < worldArray.length; ++h) {
-  objWorldArray.push([]);
+  objWorld.push([]);
   for (let w = 0; w < worldArray[h].length; ++w) {
-    objWorldArray[h].push(new List());
+    objWorld[h].push(new Set()); // list has O(n) deletion, set has O(1) deletion
   }
 }
 
@@ -81,6 +84,11 @@ const DIRECTION = {
   RIGHT: 'right'
 };
 
+const TYPE = {
+  ROCK: 'obj_rock',
+  PLAYER: 'obj_player'
+};
+
 let player;
 let player2;
 let cursors;
@@ -91,7 +99,6 @@ let levelTime = 0.0;
 let pausedText;
 let selectedEntity;
 let graphics;
-let gridWorld;
 let paused = false;
 let eKeyObj;
 const offset = globals.OFFSET;
@@ -146,9 +153,9 @@ function grid2world(val) {
   return offset + val * tileSize;
 }
 
-function setEntityRock(obj, { name = 'obj_rock', x = 0, y = 0 } = {}) {
+function setEntityRock(obj, { type = TYPE.ROCK, x = 0, y = 0 } = {}) {
   obj.setDataEnabled();
-  obj.data.set('name', name);
+  obj.data.set('type', type);
   obj.x = grid2world(x);
   obj.y = grid2world(y);
 }
@@ -156,7 +163,7 @@ function setEntityRock(obj, { name = 'obj_rock', x = 0, y = 0 } = {}) {
 function setEntityPlayer(
   obj,
   {
-    name = 'obj_player',
+    type = TYPE.PLAYER,
     x = 0,
     y = 0,
     end_x = 0,
@@ -175,7 +182,7 @@ function setEntityPlayer(
 ) {
   obj.setDataEnabled();
   obj.data
-    .set('name', name)
+    .set('type', type)
     .set('x', x)
     .set('y', y)
     .set('end_x', end_x)
@@ -202,12 +209,14 @@ function makeMoveAction(entity, x, y) {
   let direction = null;
   let invalid = false;
 
+  // check direction
   if (x < 0) {
     direction = DIRECTION.LEFT;
   } else if (x > 0) {
     direction = DIRECTION.RIGHT;
   }
 
+  // check if out of bounds of world
   if (
     entity.data.values.end_x + x >= worldWidth
     || entity.data.values.end_x + x < 0
@@ -215,11 +224,9 @@ function makeMoveAction(entity, x, y) {
     || entity.data.values.end_y + y < 0
   ) return null;
 
-  objWorldArray[entity.data.values.end_y + y][entity.data.values.end_x + x].forEach(
+  objWorld[entity.data.values.end_y + y][entity.data.values.end_x + x].forEach(
     (obj) => {
-      if (
-        obj.data.values.name === 'obj_rock'
-      ) {
+      if (obj.data.values.type === TYPE.ROCK) {
         invalid = true;
       }
     }
@@ -238,6 +245,29 @@ function makeMoveAction(entity, x, y) {
     y,
     direction
   };
+}
+
+function checkValid(x, y) {
+  let valid = true;
+
+  objWorld[y][x].forEach((obj) => {
+    if (obj.data.vales.type === TYPE.ROCK) {
+      valid = false;
+    }
+  });
+
+  return valid;
+}
+
+function checkPushable(x, y) {
+  let pushable = true;
+
+  objWorld[y][x].forEach((obj) => {
+    if (obj.data.vales.type === TYPE.ROCK) {
+      pushable = false;
+    }
+  });
+  return pushable;
 }
 
 function makePushingAction(entity, x, y) {
@@ -292,6 +322,7 @@ function drawEntityActions(entity) {
         tileSize / 4.0
       );
 
+      // rotate triangle
       if (action.x > 0) {
         Phaser.Geom.Triangle.Rotate(triangle, Math.PI / 2);
       } else if (action.x < 0) {
@@ -314,6 +345,7 @@ function drawEntityActions(entity) {
       graphics.strokeLineShape(line);
       movePosX += action.x * tileSize;
       movePosY += action.y * tileSize;
+    } else if(action.state === STATE.PUSHING){
     }
   });
 
@@ -353,7 +385,17 @@ function drawEntityActions(entity) {
     doneText.setVisible(true);
     doneText.setText(`${(levelTime + totalTime).toFixed(1)}`);
     doneText.setPosition(movePosX, movePosY);
+
+    // end position indicator
+    const end_x = values.end_x;
+    const end_y = values.end_y;
+    const endX = grid2world(end_x);
+    const endY = grid2world(end_y);
+
+    graphics.lineStyle(2, values.color, 0.5);
+    graphics.strokeRect(endX-tileSize/2., endY-tileSize/2., tileSize, tileSize);
   } else {
+    // no actions
     // disable text indicator
     values.text.setVisible(false);
     values.doneText.setVisible(false);
@@ -724,14 +766,14 @@ function create() {
         player.data.values.y = y;
         player.data.values.end_x = x;
         player.data.values.end_y = y;
-        objWorldArray[y][x].push(player);
+        objWorld[y][x].add(player);
       }
       if (worldArray[y][x] === '2') {
         player2.data.values.x = x;
         player2.data.values.y = y;
         player2.data.values.end_x = x;
         player2.data.values.end_y = y;
-        objWorldArray[y][x].push(player2);
+        objWorld[y][x].add(player2);
       }
       if (worldArray[y][x] === 'w') {
         console.log('hit world');
@@ -739,11 +781,11 @@ function create() {
           .sprite(0, 0, `rock_${Phaser.Math.Between(1, 3)}`)
           .setScale(1.5);
         setEntityRock(rock, { x, y });
-        objWorldArray[y][x].push(rock);
+        objWorld[y][x].add(rock);
       }
     }
   }
-  console.log(objWorldArray);
+  console.log(objWorld);
 
   selectedEntity = player;
 
@@ -865,8 +907,9 @@ function update(time, delta) {
       tileSize
     );
 
+    // e is the hotkey for push
     if (eKeyObj.isDown) {
-      // draw the UI
+      // draw the push UI
 
       const values = selectedEntity.data.values;
 
@@ -941,8 +984,8 @@ function update(time, delta) {
 
             let stall_action = false;
 
-            objWorldArray[values.y + action.y][values.x + action.x].forEach((obj) => {
-              if (obj !== entity && obj.data.values.name === 'obj_player') {
+            objWorld[values.y + action.y][values.x + action.x].forEach((obj) => {
+              if (obj !== entity && obj.data.values.type === TYPE.PLAYER) {
                 stall_action = true;
               }
             });
@@ -951,12 +994,12 @@ function update(time, delta) {
               return;
             }
 
-            objWorldArray[values.y][values.x].delete(entity);
+            objWorld[values.y][values.x].delete(entity);
 
             values.x += action.x;
             values.y += action.y;
 
-            objWorldArray[values.y][values.x].push(entity);
+            objWorld[values.y][values.x].add(entity);
 
             entity.anims.play('walk_right', true);
 
@@ -966,6 +1009,8 @@ function update(time, delta) {
             }
           } else if (action.state === STATE.PUSHED) {
             values.state = STATE.PUSHED;
+          } else if (action.state === STATE.PUSHING) {
+            values.state = STATE.PUSHING;
           }
           const extraTime = action.elapsed - action.done;
 

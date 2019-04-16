@@ -15,10 +15,9 @@
     "max-len": "off",
     "no-use-before-define": "off",
     "no-loop-func": "off",
-    "linebreak-style": 0, //don't enforce linebreak rule
-    "properties": "never", //ignore camelcase rule
+    "linebreak-style": 0,
+    "properties": "never",
     "camelcase": "off",
-    "no-param-reassign" : "off"
-    
+    "no-param-reassign": "off"
   }
 }
