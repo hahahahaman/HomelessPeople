@@ -242,7 +242,7 @@ function setEntity(
     end_y = 0,
     moveSpeed = 0.5,
     direction = DIRECTION.RIGHT,
-    color = 0xfffff,
+    color = 0xffffff,
     state = STATE.IDLE,
     depth = 0,
     actionsDeque = new Deque(),
@@ -307,15 +307,18 @@ function setEntityRock(entity, { type = TYPE.ROCK, x = 0, y = 0 } = {}) {
 function setEntitySpike(
   entity,
   {
-    type = TYPE.SPIKE, x = 0, y = 0, idle = () => {}
+    type = TYPE.SPIKE, color = 0xff0000, x = 0, y = 0, idle = () => {}
   } = {}
 ) {
   setEntity(entity, {
     type,
     x,
     y,
+    color,
+    /*
     timeLeftText: null,
     doneText: null,
+    */
     state: STATE.IDLE,
     idle
   });
@@ -548,14 +551,14 @@ function drawEntityActions(entity) {
   if (deque.length > 0) {
     // draw current action indicators
     const action = deque.peek();
-    const w = entity.width / 10.0;
-    const h = entity.height * (1.0 - action.elapsed / action.done);
+    const w = tileSize / 10.0;
+    const h = tileSize * (1.0 - action.elapsed / action.done);
 
     // bar indicator for current action
     graphics.fillStyle(values.color, 0.8);
     graphics.fillRect(
-      entity.x - entity.width / 2.0,
-      entity.y - entity.height / 2.0,
+      entity.x - tileSize / 2.0,
+      entity.y - tileSize / 2.0,
       w,
       h
     );
@@ -566,8 +569,8 @@ function drawEntityActions(entity) {
     timeLeftText.setVisible(true);
     timeLeftText.setText(`${totalTime.toFixed(1)}`);
     timeLeftText.setPosition(
-      entity.x + entity.width / 2.0,
-      entity.y - entity.height / 2.0
+      entity.x + tileSize / 2.0,
+      entity.y - tileSize / 2.0
     );
 
     // done time indicator
@@ -979,7 +982,7 @@ function create() {
     }); // initialize data values
   });
 
-  player.data.set('color', 0xff0000);
+  player.data.set('color', 0x00aaaa);
   player2.data.set('color', 0x0000ff);
 
   // initialize all selectable entities
@@ -1030,19 +1033,20 @@ function create() {
         objWorld[y][x].add(rock);
       }
       if (worldArray[y][x] === 'c') {
-        const coin = this.add.sprite(0, 0, 'coin', 0).setScale(2);
+        const coin = this.add.sprite(0, 0, 'coin', 0).setScale(1.5);
         coin.play('coin');
         setEntity(coin, {
           type: TYPE.COIN,
           x,
-          y,
-          timeLeftText: null,
-          doneText: null
+          y
         });
         objWorld[y][x].add(coin);
+        globals.entities.add(coin);
       }
       if (worldArray[y][x] === 's') {
         const spike = this.add.sprite(0, 0, 'spike_1').setScale(2.5);
+        spike.width = tileSize;
+        spike.height = tileSize;
         setEntitySpike(spike, {
           x,
           y,
@@ -1082,7 +1086,7 @@ function create() {
     pausedText.setVisible(false);
 
     clockText = phaser.add
-      .text(0, 0, `Time: ${levelTime.toFixed(2)}`, {
+      .text(0, 0, '', {
         font: '20px Courier',
         fill: '#ffffff'
       })
@@ -1246,7 +1250,7 @@ function update(time, delta) {
       const values = entity.data.values;
       const deque = values.actionsDeque;
 
-      if (values.type === TYPE.PLAYER && values.state !== STATE.EXPLODE) {
+      if (values.state !== STATE.EXPLODE) {
         drawEntityActions(entity);
       }
 
@@ -1276,7 +1280,11 @@ function update(time, delta) {
               let stall_action = false;
 
               objWorld[nextY][nextX].forEach((obj) => {
-                if (obj !== entity && obj.data.values.type === TYPE.PLAYER) {
+                if (
+                  obj !== entity
+                  && (obj.data.values.type === TYPE.PLAYER
+                    || obj.data.values.type === TYPE.TRASH)
+                ) {
                   stall_action = true;
                 }
               });
