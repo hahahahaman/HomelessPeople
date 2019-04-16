@@ -86,7 +86,9 @@ const DIRECTION = {
 
 const TYPE = {
   ROCK: 'obj_rock',
-  PLAYER: 'obj_player'
+  PLAYER: 'obj_player',
+  SPIKE: 'obj_spike',
+  TRASH: 'obj_trash'
 };
 
 let player;
@@ -153,15 +155,8 @@ function grid2world(val) {
   return offset + val * tileSize;
 }
 
-function setEntityRock(obj, { type = TYPE.ROCK, x = 0, y = 0 } = {}) {
-  obj.setDataEnabled();
-  obj.data.set('type', type);
-  obj.x = grid2world(x);
-  obj.y = grid2world(y);
-}
-
-function setEntityPlayer(
-  obj,
+function setEntity(
+  entity,
   {
     type = TYPE.PLAYER,
     x = 0,
@@ -173,15 +168,19 @@ function setEntityPlayer(
     color = 0xfffff,
     state = STATE.IDLE,
     actionsDeque = new Deque(),
-    text = phaser.add.text(0, 0, '', { font: '16px Courier', fill: '#ffffff' }),
+    timeLeftText = phaser.add.text(0, 0, '', {
+      font: '16px Courier',
+      fill: '#ffffff'
+    }),
     doneText = phaser.add.text(0, 0, '', {
       font: '16px Courier',
       fill: '#ffffff'
     })
   } = {}
 ) {
-  obj.setDataEnabled();
-  obj.data
+  entity.setDataEnabled();
+  entity.setInteractive();
+  entity.data
     .set('type', type)
     .set('x', x)
     .set('y', y)
@@ -192,16 +191,30 @@ function setEntityPlayer(
     .set('color', color)
     .set('state', state)
     .set('actionsDeque', actionsDeque)
-    .set('text', text)
+    .set('timeLeftText', timeLeftText)
     .set('doneText', doneText);
-  obj.x = grid2world(x);
-  obj.y = grid2world(y);
-  obj.on('changedata', (gameObject, key, value) => {
+
+  if (timeLeftText) timeLeftText.depth = 1;
+  if (doneText) doneText.depth = 1;
+  entity.x = grid2world(x);
+  entity.y = grid2world(y);
+  entity.on('changedata', (gameObject, key, value) => {
     if (key === 'x') {
-      obj.x = grid2world(value);
+      entity.x = grid2world(value);
     } else if (key === 'y') {
-      obj.y = grid2world(value);
+      entity.y = grid2world(value);
     }
+  });
+}
+
+function setEntityRock(entity, { type = TYPE.ROCK, x = 0, y = 0 } = {}) {
+  setEntity(entity, {
+    type,
+    x,
+    y,
+    actionsDeque: null,
+    timeLeftText: null,
+    doneText: null
   });
 }
 
@@ -216,38 +229,39 @@ function makeMoveAction(entity, x, y) {
     direction = DIRECTION.RIGHT;
   }
 
+  const values = entity.data.values;
+  const end_x = values.end_x;
+  const end_y = values.end_y;
+
   // check if out of bounds of world
-  if (
-    entity.data.values.end_x + x >= worldWidth
-    || entity.data.values.end_x + x < 0
-    || entity.data.values.end_y + y >= worldHeight
-    || entity.data.values.end_y + y < 0
-  ) return null;
+  if (!isPosInWorld(end_x + x, end_y + y)) return;
 
-  objWorld[entity.data.values.end_y + y][entity.data.values.end_x + x].forEach(
-    (obj) => {
-      if (obj.data.values.type === TYPE.ROCK) {
-        invalid = true;
-      }
+  objWorld[end_y + y][end_x + x].forEach((obj) => {
+    if (obj.data.values.type === TYPE.ROCK) {
+      invalid = true;
     }
-  );
+  });
 
-  if (invalid) return null;
+  if (invalid) return;
 
-  entity.data.values.end_x += x;
-  entity.data.values.end_y += y;
+  // REMOVE
+  /*
+  values.end_x += x;
+  values.end_y += y;
+  */
 
-  return {
+  values.actionsDeque.push({
     state: STATE.MOVE,
     elapsed: 0.0,
-    done: selectedEntity.getData('moveSpeed'),
+    done: values.moveSpeed,
     x,
     y,
     direction
-  };
+  });
 }
 
-function checkValid(x, y) {
+/*
+function isValid(x, y) {
   let valid = true;
 
   objWorld[y][x].forEach((obj) => {
@@ -258,12 +272,42 @@ function checkValid(x, y) {
 
   return valid;
 }
+*/
 
-function checkPushable(x, y) {
+function isPosInWorld(worldX, worldY) {
+  if (worldX >= worldWidth || worldX < 0 || worldY >= worldHeight || worldY < 0) return false;
+
+  return true;
+}
+
+function isValidMovePos(worldX, worldY) {
+  if (!isPosInWorld(worldX, worldY)) return false;
+
+  let valid = true;
+  objWorld[worldY][worldX].forEach((obj) => {
+    if (
+      obj.data.values.type === TYPE.ROCK
+      || obj.data.values.type === TYPE.PLAYER
+      || obj.data.values.type === TYPE.TRASH
+    ) {
+      valid = false;
+    }
+  });
+  return valid;
+}
+
+function isPushablePos(worldX, worldY) {
+  // check if position is pushable
+
+  // out of bounds check
+  if (!isPosInWorld(worldX, worldY)) {
+    return false;
+  }
+
+  // position type check
   let pushable = true;
-
-  objWorld[y][x].forEach((obj) => {
-    if (obj.data.vales.type === TYPE.ROCK) {
+  objWorld[worldY][worldX].forEach((obj) => {
+    if (obj.data.values.type === TYPE.ROCK) {
       pushable = false;
     }
   });
@@ -271,27 +315,40 @@ function checkPushable(x, y) {
 }
 
 function makePushingAction(entity, x, y) {
-  return {
+  // player has to wait for pushing action to complete
+  const values = entity.data.values;
+  values.actionsDeque.push({
     state: STATE.PUSHING,
     elapsed: 0.0,
     done: 2.0,
     x,
     y
-  };
+  });
 }
 
-function makePushedAction(entity, x, y) {
-  return {
+function makePushedAction(entity, moveX, moveY, done = 0.3) {
+  // any entity has to take some time to get pushed
+
+  const values = entity.data.values;
+
+  // add to front
+  values.actionsDeque.unshift({
     state: STATE.PUSHED,
     elapsed: 0.0,
-    done: 0.1,
-    x,
-    y
-  };
+    done,
+    x: moveX, // relative movement
+    y: moveY
+  });
 }
 
-function pushAction(entity, action) {
-  if (action) entity.getData('actionsDeque').push(action);
+function entityMoveTo(entity, worldX, worldY) {
+  const values = entity.data.values;
+  objWorld[values.y][values.x].delete(entity);
+
+  values.x = worldX;
+  values.y = worldY;
+
+  objWorld[values.y][values.x].add(entity);
 }
 
 function drawEntityActions(entity) {
@@ -306,15 +363,14 @@ function drawEntityActions(entity) {
   const values = entity.data.values;
   const deque = values.actionsDeque;
 
+  let totalTime = 0.0;
   deque.forEach((action) => {
+    totalTime += action.done;
+    const nextX = movePosX + action.x * tileSize;
+    const nextY = movePosY + action.y * tileSize;
     if (action.state === STATE.MOVE) {
       // Draw all the move stuff
-      const line = new Phaser.Geom.Line(
-        movePosX,
-        movePosY,
-        movePosX + action.x * tileSize,
-        movePosY + action.y * tileSize
-      );
+      const line = new Phaser.Geom.Line(movePosX, movePosY, nextX, nextY);
 
       const triangle = new Phaser.Geom.Triangle.BuildEquilateral(
         0,
@@ -343,20 +399,24 @@ function drawEntityActions(entity) {
 
       graphics.lineStyle(3, values.color, 0.5); // width, color, alpha
       graphics.strokeLineShape(line);
-      movePosX += action.x * tileSize;
-      movePosY += action.y * tileSize;
-    } else if(action.state === STATE.PUSHING){
+      movePosX = nextX;
+      movePosY = nextY;
+    } else if (action.state === STATE.PUSHING) {
+      const radius = tileSize / 8;
+      const line = new Phaser.Geom.Line(movePosX, movePosY, nextX, nextY);
+      graphics.lineStyle(2, values.color, 0.9);
+      graphics.strokeCircle(nextX, nextY, radius);
+
+      graphics.lineStyle(4, values.color, 0.9); // width, color, alpha
+      graphics.strokeLineShape(line);
+    } else if (action.state === STATE.PUSHED) {
+      // triangle with a cirlce in it?
+      // TODO
     }
   });
 
   if (deque.length > 0) {
     // draw current action indicators
-    let totalTime = 0.0;
-
-    deque.forEach((action) => {
-      totalTime += action.done;
-    });
-
     const action = deque.peek();
     const w = entity.width / 10.0;
     const h = entity.height * (1.0 - action.elapsed / action.done);
@@ -372,10 +432,10 @@ function drawEntityActions(entity) {
 
     // elapsed time text
     totalTime -= action.elapsed;
-    const elapsedText = values.text;
-    elapsedText.setVisible(true);
-    elapsedText.setText(`${totalTime.toFixed(1)}`);
-    elapsedText.setPosition(
+    const timeLeftText = values.timeLeftText;
+    timeLeftText.setVisible(true);
+    timeLeftText.setText(`${totalTime.toFixed(1)}`);
+    timeLeftText.setPosition(
       entity.x + entity.width / 2.0,
       entity.y - entity.height / 2.0
     );
@@ -392,12 +452,17 @@ function drawEntityActions(entity) {
     const endX = grid2world(end_x);
     const endY = grid2world(end_y);
 
-    graphics.lineStyle(2, values.color, 0.5);
-    graphics.strokeRect(endX-tileSize/2., endY-tileSize/2., tileSize, tileSize);
+    graphics.lineStyle(2, values.color, 0.7);
+    graphics.strokeRect(
+      endX - tileSize / 2,
+      endY - tileSize / 2,
+      tileSize,
+      tileSize
+    );
   } else {
     // no actions
     // disable text indicator
-    values.text.setVisible(false);
+    values.timeLeftText.setVisible(false);
     values.doneText.setVisible(false);
   }
 }
@@ -417,7 +482,7 @@ function checkRectSpriteOverlap(rect, sprite) {
 }
 */
 
-function checkPointRectOverlap(x, y, rX, rY, rW, rH) {
+function isPointRectOverlap(x, y, rX, rY, rW, rH) {
   if (x < rX || x > rX + rW || y < rY || y > rY + rH) return false;
 
   return true;
@@ -516,16 +581,16 @@ function create() {
   // input for entity
   this.input.keyboard
     .on('keydown-W', (event) => {
-      pushAction(selectedEntity, makeMoveAction(selectedEntity, 0, -1)); // up is negative
+      makeMoveAction(selectedEntity, 0, -1); // up is negative
     })
     .on('keydown-S', (event) => {
-      pushAction(selectedEntity, makeMoveAction(selectedEntity, 0, 1)); // down
+      makeMoveAction(selectedEntity, 0, 1); // down
     })
     .on('keydown-A', (event) => {
-      pushAction(selectedEntity, makeMoveAction(selectedEntity, -1, 0)); // left
+      makeMoveAction(selectedEntity, -1, 0); // left
     })
     .on('keydown-D', (event) => {
-      pushAction(selectedEntity, makeMoveAction(selectedEntity, 1, 0)); // right
+      makeMoveAction(selectedEntity, 1, 0); // right
     })
     // remove actions from actions deque
     /*
@@ -534,14 +599,23 @@ function create() {
     })
     */
     .on('keydown-X', (event) => {
-      const last_action = selectedEntity.getData('actionsDeque').pop(); // remove from back
-      selectedEntity.data.values.end_x -= last_action.x;
-      selectedEntity.data.values.end_y -= last_action.y;
+      if (selectedEntity.getData('actionsDeque').length > 0) {
+        const last_action = selectedEntity.getData('actionsDeque').pop(); // remove from back
+
+        // REMOVE
+        /*
+        selectedEntity.data.values.end_x -= last_action.x;
+        selectedEntity.data.values.end_y -= last_action.y;
+        */
+      }
     })
     .on('keydown-C', (event) => {
       // clear actions
+      // REMOVE
+      /*
       selectedEntity.data.values.end_x = selectedEntity.data.values.x;
       selectedEntity.data.values.end_y = selectedEntity.data.values.y;
+      */
       selectedEntity.getData('actionsDeque').clear();
     })
     .on('keydown-ONE', () => {
@@ -567,79 +641,83 @@ function create() {
 
   eKeyObj = phaser.input.keyboard.addKey('E');
 
+  // right click push
   phaser.input.on('pointerdown', (pointer) => {
     if (pointer.rightButtonDown() && eKeyObj.isDown) {
       // push action
-      console.log('push');
 
       // check if in correct position
       const mouseX = phaser.input.mousePointer.worldX;
       const mouseY = phaser.input.mousePointer.worldY;
-      const endX = selectedEntity.data.values.end_x;
-      const endY = selectedEntity.data.values.end_y;
-      const x = grid2world(endX);
-      const y = grid2world(endY);
+      const end_x = selectedEntity.data.values.end_x;
+      const end_y = selectedEntity.data.values.end_y;
+      const endX = grid2world(end_x);
+      const endY = grid2world(end_y);
 
       // up
       if (
-        endY - 1 >= 0
-        && checkPointRectOverlap(
+        isPointRectOverlap(
           mouseX,
           mouseY,
-          x - tileSize / 2,
-          y - (3 * tileSize) / 2,
+          endX - tileSize / 2,
+          endY - (3 * tileSize) / 2,
           tileSize,
           tileSize
         )
+        && isPushablePos(end_x, end_y - 1)
       ) {
         console.log('push up');
+        makePushingAction(selectedEntity, 0, -1);
       }
 
       // down
       if (
-        endY + 1 < worldHeight
-        && checkPointRectOverlap(
+        isPointRectOverlap(
           mouseX,
           mouseY,
-          x - tileSize / 2,
-          y + tileSize / 2,
+          endX - tileSize / 2,
+          endY + tileSize / 2,
           tileSize,
           tileSize
         )
+        && isPushablePos(end_x, end_y + 1)
       ) {
         console.log('push down');
+        makePushingAction(selectedEntity, 0, 1);
       }
 
       // left
       if (
-        endX - 1 >= 0
-        && checkPointRectOverlap(
+        isPointRectOverlap(
           mouseX,
           mouseY,
 
-          x - (3 * tileSize) / 2,
-          y - tileSize / 2,
+          endX - (3 * tileSize) / 2,
+          endY - tileSize / 2,
           tileSize,
           tileSize
         )
+        && isPushablePos(end_x - 1, end_y)
       ) {
         console.log('push left');
+        makePushingAction(selectedEntity, -1, 0);
       }
 
       // right
       if (
-        endX + 1 < worldWidth
-        && checkPointRectOverlap(
+        isPointRectOverlap(
           mouseX,
           mouseY,
 
-          x + tileSize / 2,
-          y - tileSize / 2,
+          endX + tileSize / 2,
+          endY - tileSize / 2,
           tileSize,
           tileSize
         )
+        && isPushablePos(end_x + 1, end_y)
       ) {
         console.log('push right');
+        makePushingAction(selectedEntity, 1, 0);
       }
     }
   });
@@ -728,8 +806,7 @@ function create() {
   globals.entities.add(player2);
 
   globals.entities.forEach((entity) => {
-    setEntityPlayer(entity); // initialize data values
-    entity.setInteractive();
+    setEntity(entity); // initialize data values
   });
 
   player.data.set('color', 0xff0000);
@@ -815,9 +892,11 @@ function create() {
     })
     .setScrollFactor(0);
 
+  /*
   debugText = phaser.add
     .text(10, 10, 'Cursors to move', { font: '16px Courier', fill: '#ffffff' })
     .setScrollFactor(0);
+    */
 }
 
 // Handle the camera scrolling
@@ -910,49 +989,50 @@ function update(time, delta) {
     // e is the hotkey for push
     if (eKeyObj.isDown) {
       // draw the push UI
+      // drawPushUI
 
       const values = selectedEntity.data.values;
 
-      const endX = values.end_x;
-      const endY = values.end_y;
-      const x = grid2world(endX);
-      const y = grid2world(endY);
+      const end_x = values.end_x;
+      const end_y = values.end_y;
+      const endX = grid2world(end_x);
+      const endY = grid2world(end_y);
       graphics.fillStyle(0x00ff00, 0.5);
       // up
-      if (endY - 1 >= 0) {
+      if (isPushablePos(end_x, end_y - 1)) {
         graphics.fillRect(
-          x - tileSize / 2,
-          y - (3 * tileSize) / 2,
+          endX - tileSize / 2,
+          endY - (3 * tileSize) / 2,
           tileSize,
           tileSize
         );
       }
 
       // down
-      if (endY + 1 < worldHeight) {
+      if (isPushablePos(end_x, end_y + 1)) {
         graphics.fillRect(
-          x - tileSize / 2,
-          y + tileSize / 2,
+          endX - tileSize / 2,
+          endY + tileSize / 2,
           tileSize,
           tileSize
         );
       }
 
       // left
-      if (endX - 1 >= 0) {
+      if (isPushablePos(end_x - 1, end_y)) {
         graphics.fillRect(
-          x - (3 * tileSize) / 2,
-          y - tileSize / 2,
+          endX - (3 * tileSize) / 2,
+          endY - tileSize / 2,
           tileSize,
           tileSize
         );
       }
 
       // right
-      if (endX + 1 < worldWidth) {
+      if (isPushablePos(end_x + 1, end_y)) {
         graphics.fillRect(
-          x + tileSize / 2,
-          y - tileSize / 2,
+          endX + tileSize / 2,
+          endY - tileSize / 2,
           tileSize,
           tileSize
         );
@@ -966,51 +1046,66 @@ function update(time, delta) {
 
     // handle all Entities
     globals.entities.forEach((entity) => {
-      // draw indicators for actions
       drawEntityActions(entity);
 
       const values = entity.data.values;
       const deque = values.actionsDeque;
 
+      // calculate end_x, end_y
+      let end_x = values.x;
+      let end_y = values.y;
+      deque.forEach((action) => {
+        if (action.state === STATE.MOVE || action.state === STATE.PUSHED) {
+          end_x += action.x;
+          end_y += action.y;
+        }
+      });
+      values.end_x = end_x;
+      values.end_y = end_y;
+
       if (deque.length > 0) {
+        // draw indicators for actions
+
         const action = deque.peek();
 
         const direction = action.direction;
+        const nextX = values.x + action.x;
+        const nextY = values.y + action.y;
 
         // time elapsed
         if (action.elapsed > action.done) {
           if (action.state === STATE.MOVE) {
-            values.state = STATE.MOVE;
-
             let stall_action = false;
 
-            objWorld[values.y + action.y][values.x + action.x].forEach((obj) => {
+            objWorld[nextY][nextX].forEach((obj) => {
               if (obj !== entity && obj.data.values.type === TYPE.PLAYER) {
                 stall_action = true;
               }
             });
 
+            if (!isValidMovePos(nextX, nextY)) stall_action = true;
+
             if (stall_action) {
               return;
             }
 
-            objWorld[values.y][values.x].delete(entity);
-
-            values.x += action.x;
-            values.y += action.y;
-
-            objWorld[values.y][values.x].add(entity);
-
-            entity.anims.play('walk_right', true);
-
-            if (direction !== null && direction !== values.direction) {
-              entity.flipX = !entity.flipX;
-              values.direction = direction;
-            }
+            entityMoveTo(entity, nextX, nextY);
           } else if (action.state === STATE.PUSHED) {
-            values.state = STATE.PUSHED;
+            if (isValidMovePos(nextX, nextY)) {
+              entityMoveTo(entity, nextX, nextY);
+            }
           } else if (action.state === STATE.PUSHING) {
-            values.state = STATE.PUSHING;
+            // push all objects at position
+            objWorld[nextY][nextX].forEach((obj) => {
+              const objValues = obj.data.values;
+              // object has been pushed
+
+              // clear all previous actions
+              objValues.actionsDeque.clear();
+
+              // add pushed action to the deque
+              makePushedAction(obj, action.x, action.y);
+            });
           }
           const extraTime = action.elapsed - action.done;
 
@@ -1023,6 +1118,15 @@ function update(time, delta) {
         } else {
           // action not done
           action.elapsed += dt;
+
+          values.state = action.state;
+
+          entity.anims.play('walk_right', true);
+
+          if (direction !== null && direction !== values.direction) {
+            entity.flipX = !entity.flipX;
+            values.direction = direction;
+          }
         }
       } else {
         values.state = STATE.IDLE;
@@ -1031,6 +1135,7 @@ function update(time, delta) {
     });
 
     // set debug text
+    /*
     debugText.setText([
       `fps: ${game.loop.actualFps}`,
       `dt: ${dt}`,
@@ -1043,12 +1148,14 @@ function update(time, delta) {
       `grid x, y: ${gridX} ${gridY}`,
       `rad: ${rad}`,
       `ratioX, ratioY: ${ratioX}, ${ratioY}`,
-      `selectedEntity, x, y, deque: 
+      `selectedEntity, x, y, deque:
       ${selectedEntity.getData('x')}
       ${selectedEntity.getData('y')}
       `
       // ${JSON.stringify(selectedEntity.getData('actionsDeque'))}
     ]);
+    */
+
     clockText.setText(`Time: ${levelTime.toFixed(1)}`);
     clockText.setPosition(
       phaser.cameras.main.width - clockText.displayWidth,
