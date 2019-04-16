@@ -326,7 +326,7 @@ function makeSpikePrepAction(entity) {
   values.actionsDeque.push({
     state: STATE.SPIKE_PREP,
     elapsed: 0.0,
-    done: 1
+    done: 0.333
   });
 }
 
@@ -353,7 +353,7 @@ function makeSpikeDownAction(entity) {
   values.actionsDeque.push({
     state: STATE.SPIKE_DOWN,
     elapsed: 0.0,
-    done: 1
+    done: 0.5
   });
 }
 
@@ -900,14 +900,14 @@ function create() {
       { key: 'spike_3' },
       { key: 'spike_4' }
     ],
-    frameRate: 4,
+    frameRate: 12,
     repeat: 0
   });
 
   this.anims.create({
     key: 'spike_down',
     frames: [{ key: 'spike_3' }, { key: 'spike_2' }, { key: 'spike_1' }],
-    frameRate: 3,
+    frameRate: 6,
     repeat: 0
   });
 
