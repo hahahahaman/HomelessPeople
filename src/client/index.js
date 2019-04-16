@@ -14,7 +14,7 @@ const worldArray = [
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'c', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
@@ -105,14 +105,15 @@ const TYPE = {
   ROCK: 'obj_rock',
   PLAYER: 'obj_player',
   SPIKE: 'obj_spike',
-  TRASH: 'obj_trash'
+  TRASH: 'obj_trash',
+  COIN: 'obj_coin'
 };
 
 let player;
 let player2;
 let cursors;
 let keys;
-let debugText;
+// let debugText;
 let clockText;
 let levelTime = 0.0;
 let pausedText;
@@ -133,6 +134,11 @@ function preload() {
   this.load.spritesheet('homeless_guy', 'assets/homeless_right.png', {
     frameWidth: 50,
     frameHeight: 50
+  });
+
+  this.load.spritesheet('coin', 'assets/coins.png', {
+    frameWidth: 16,
+    frameHeight: 16,
   });
 
   // 37 columns
@@ -757,6 +763,21 @@ function create() {
   );
 
   //--------------------------------------------
+  // Coin
+  //-------------------------------------------
+  this.anims.create({
+    key: 'coin',
+    frames: this.anims.generateFrameNumbers('coin', {
+      start: 0,
+      end: 8
+    }),
+    frameRate: 6,
+    repeat: -1,
+    //yoyo: true
+  });
+
+
+  //--------------------------------------------
   // Players
   //--------------------------------------------
 
@@ -841,6 +862,18 @@ function create() {
           .setScale(1.5);
         setEntityRock(rock, { x, y });
         objWorld[y][x].add(rock);
+      }
+      if (worldArray[y][x] === 'c') {
+        const coin = this.add.sprite(0, 0, 'coin', 0).setScale(2);
+        coin.play('coin');
+        setEntity(coin, {
+          type: TYPE.COIN,
+          x,
+          y,
+          timeLeftText: null,
+          doneText: null
+        });
+        objWorld[y][x].add(coin);
       }
     }
   }
