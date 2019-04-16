@@ -3,7 +3,6 @@ import Phaser from 'phaser';
 
 // Data structures from: http://www.collectionsjs.com/
 import Deque from 'collections/deque';
-import List from 'collections/list';
 import Set from 'collections/set';
 
 import * as globals from './globals';
@@ -11,6 +10,10 @@ import * as globals from './globals';
 const worldArray = [
   ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ['w', '1', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+  ['w', 'a', 's', 'a', 'a', 'w', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+  ['w', 'a', 's', 'w', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
@@ -51,6 +54,10 @@ const bgWorldArray = [
   ['11', '14', '51', '51', '51', '51', '14', '48'],
   ['11', '14', '51', '51', '51', '51', '14', '48'],
   ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '14', '14', '14', '14', '14', '48'],
+  ['11', '14', '14', '14', '14', '14', '14', '48'],
+  ['11', '14', '14', '14', '14', '14', '14', '48'],
+  ['11', '14', '14', '14', '14', '14', '14', '48'],
   ['11', '14', '14', '14', '14', '14', '14', '48'],
   ['45', '47', '47', '47', '47', '47', '47', '46']
 ];
@@ -93,7 +100,11 @@ const STATE = {
   IDLE: 'idle',
   MOVE: 'move',
   PUSHING: 'pushing',
-  PUSHED: 'pushed'
+  PUSHED: 'pushed',
+  SPIKE_PREP: 'spike_prep',
+  SPIKE_UP: 'spike_up',
+  SPIKE_DOWN: 'spike_down',
+  EXPLODE: 'explode'
 };
 
 const DIRECTION = {
@@ -111,6 +122,7 @@ const TYPE = {
 
 let player;
 let player2;
+let dummy;
 let cursors;
 let keys;
 // let debugText;
@@ -135,10 +147,14 @@ function preload() {
     frameWidth: 50,
     frameHeight: 50
   });
+  this.load.spritesheet('explosion', 'assets/explosion-4.png', {
+    frameWidth: 128,
+    frameHeight: 128
+  });
 
   this.load.spritesheet('coin', 'assets/coins.png', {
     frameWidth: 16,
-    frameHeight: 16,
+    frameHeight: 16
   });
 
   // 37 columns
@@ -159,6 +175,10 @@ function preload() {
     this.load.image(`rock_${i}`, `assets/rock${i}.png`);
   }
 
+  for (let i = 1; i < 5; ++i) {
+    this.load.image(`spike_${i}`, `assets/spike${i}.png`);
+  }
+
   phaser = this;
 }
 
@@ -172,6 +192,40 @@ function enableEntities() {
   globals.entities.forEach((entity) => {
     entity.setInteractive();
   });
+}
+
+function disableEntity(entity) {
+  predisableEntity(entity);
+  if (globals.entities.has(entity)) {
+    globals.entities.delete(entity);
+  }
+
+  entity.visible = false;
+
+  /* also need to do key presses check,
+   cause those cause game to crash with both players are dead
+   */
+}
+
+function predisableEntity(entity) {
+  const values = entity.data.values;
+  if (objWorld[values.y][values.x].has(entity)) {
+    objWorld[values.y][values.x].delete(entity);
+  }
+  // do a check for selectableenities...
+  entity.disableInteractive();
+
+  selectedEntity = null;
+  for (let i = 0; i < globals.selectableEntities.length; ++i) {
+    if (entity === globals.selectableEntities[i]) {
+      globals.selectableEntities[i] = null;
+    } else if (selectedEntity === null) {
+      selectedEntity = globals.selectableEntities[i];
+    }
+  }
+
+  values.timeLeftText.setVisible(false);
+  values.doneText.setVisible(false);
 }
 
 function grid2world(val) {
@@ -190,7 +244,9 @@ function setEntity(
     direction = DIRECTION.RIGHT,
     color = 0xfffff,
     state = STATE.IDLE,
+    depth = 0,
     actionsDeque = new Deque(),
+    idle = () => {},
     timeLeftText = phaser.add.text(0, 0, '', {
       font: '16px Courier',
       fill: '#ffffff'
@@ -213,7 +269,9 @@ function setEntity(
     .set('direction', direction)
     .set('color', color)
     .set('state', state)
+    .set('depth', depth)
     .set('actionsDeque', actionsDeque)
+    .set('idle', idle)
     .set('timeLeftText', timeLeftText)
     .set('doneText', doneText);
 
@@ -221,11 +279,16 @@ function setEntity(
   if (doneText) doneText.depth = 1;
   entity.x = grid2world(x);
   entity.y = grid2world(y);
+  entity.setDepth(depth);
   entity.on('changedata', (gameObject, key, value) => {
     if (key === 'x') {
       entity.x = grid2world(value);
     } else if (key === 'y') {
       entity.y = grid2world(value);
+    } else if (key === 'depth') {
+      entity.setDepth(value);
+    } else if (key === 'idle') {
+      entity.data.values.idle = idle;
     }
   });
 }
@@ -238,6 +301,70 @@ function setEntityRock(entity, { type = TYPE.ROCK, x = 0, y = 0 } = {}) {
     actionsDeque: null,
     timeLeftText: null,
     doneText: null
+  });
+}
+
+function setEntitySpike(
+  entity,
+  {
+    type = TYPE.SPIKE, x = 0, y = 0, idle = () => {}
+  } = {}
+) {
+  setEntity(entity, {
+    type,
+    x,
+    y,
+    timeLeftText: null,
+    doneText: null,
+    state: STATE.IDLE,
+    idle
+  });
+}
+
+function makeSpikePrepAction(entity) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    state: STATE.SPIKE_PREP,
+    elapsed: 0.0,
+    done: 1
+  });
+}
+
+function makeSpikeUpAction(entity) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    state: STATE.SPIKE_UP,
+    elapsed: 0.0,
+    done: 0.5
+  });
+}
+
+function makeSpikeIdleAction(entity) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    state: STATE.IDLE,
+    elapsed: 0.0,
+    done: 1.5
+  });
+}
+
+function makeSpikeDownAction(entity) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    state: STATE.SPIKE_DOWN,
+    elapsed: 0.0,
+    done: 1
+  });
+}
+
+function makeExplodeAction(entity) {
+  const values = entity.data.values;
+  values.state = STATE.EXPLODE;
+  values.actionsDeque.clear();
+  values.actionsDeque.push({
+    state: STATE.EXPLODE,
+    elapsed: 0.0,
+    done: 1
   });
 }
 
@@ -568,16 +695,16 @@ function create() {
   // input for entity
   this.input.keyboard
     .on('keydown-W', (event) => {
-      if (!paused) makeMoveAction(selectedEntity, 0, -1); // up is negative
+      if (!paused && selectedEntity !== null) makeMoveAction(selectedEntity, 0, -1); // up is negative
     })
     .on('keydown-S', (event) => {
-      if (!paused) makeMoveAction(selectedEntity, 0, 1); // down
+      if (!paused && selectedEntity !== null) makeMoveAction(selectedEntity, 0, 1); // down
     })
     .on('keydown-A', (event) => {
-      if (!paused) makeMoveAction(selectedEntity, -1, 0); // left
+      if (!paused && selectedEntity !== null) makeMoveAction(selectedEntity, -1, 0); // left
     })
     .on('keydown-D', (event) => {
-      if (!paused) makeMoveAction(selectedEntity, 1, 0); // right
+      if (!paused && selectedEntity !== null) makeMoveAction(selectedEntity, 1, 0); // right
     })
     // remove actions from actions deque
     /*
@@ -586,7 +713,7 @@ function create() {
     })
     */
     .on('keydown-X', (event) => {
-      if (!paused) {
+      if (!paused && selectedEntity !== null) {
         if (selectedEntity.getData('actionsDeque').length > 0) {
           selectedEntity.getData('actionsDeque').pop(); // remove from back
         }
@@ -594,12 +721,12 @@ function create() {
     })
     .on('keydown-C', (event) => {
       // clear actions
-      if (!paused) {
+      if (!paused && selectedEntity !== null) {
         selectedEntity.getData('actionsDeque').clear();
       }
     })
     .on('keydown-ONE', () => {
-      if (!paused) {
+      if (!paused && globals.selectableEntities[0] !== null) {
         if (selectedEntity === globals.selectableEntities[0]) {
           phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
         } else {
@@ -608,7 +735,7 @@ function create() {
       }
     })
     .on('keydown-TWO', () => {
-      if (!paused) {
+      if (!paused && globals.selectableEntities[0] !== null) {
         if (selectedEntity === globals.selectableEntities[1]) {
           phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
         } else {
@@ -763,6 +890,42 @@ function create() {
   );
 
   //--------------------------------------------
+  // Spikes
+  //--------------------------------------------
+  this.anims.create({
+    key: 'spike_prep',
+    frames: [
+      { key: 'spike_1' },
+      { key: 'spike_2' },
+      { key: 'spike_3' },
+      { key: 'spike_4' }
+    ],
+    frameRate: 4,
+    repeat: 0
+  });
+
+  this.anims.create({
+    key: 'spike_down',
+    frames: [{ key: 'spike_3' }, { key: 'spike_2' }, { key: 'spike_1' }],
+    frameRate: 3,
+    repeat: 0
+  });
+
+  //--------------------------------------------
+  // Explosion
+  //--------------------------------------------
+
+  this.anims.create({
+    key: 'explosion',
+    frames: this.anims.generateFrameNumbers('explosion', {
+      start: 0,
+      end: 11
+    }),
+    frameRate: 10,
+    repeat: 0
+  });
+
+  //--------------------------------------------
   // Coin
   //-------------------------------------------
   this.anims.create({
@@ -772,10 +935,9 @@ function create() {
       end: 8
     }),
     frameRate: 6,
-    repeat: -1,
-    //yoyo: true
+    repeat: -1
+    // yoyo: true
   });
-
 
   //--------------------------------------------
   // Players
@@ -809,7 +971,12 @@ function create() {
   globals.entities.add(player2);
 
   globals.entities.forEach((entity) => {
-    setEntity(entity); // initialize data values
+    setEntity(entity, {
+      depth: 1,
+      idle: () => {
+        entity.anims.play('idle', true);
+      }
+    }); // initialize data values
   });
 
   player.data.set('color', 0xff0000);
@@ -856,7 +1023,6 @@ function create() {
         objWorld[y][x].add(player2);
       }
       if (worldArray[y][x] === 'w') {
-        console.log('hit world');
         const rock = this.add
           .sprite(0, 0, `rock_${Phaser.Math.Between(1, 3)}`)
           .setScale(1.5);
@@ -875,43 +1041,59 @@ function create() {
         });
         objWorld[y][x].add(coin);
       }
+      if (worldArray[y][x] === 's') {
+        const spike = this.add.sprite(0, 0, 'spike_1').setScale(2.5);
+        setEntitySpike(spike, {
+          x,
+          y,
+          idle: () => {
+            spike.setTexture('spike_1');
+            makeSpikeIdleAction(spike);
+            makeSpikePrepAction(spike);
+            makeSpikeUpAction(spike);
+            makeSpikeDownAction(spike);
+          }
+        });
+        objWorld[y][x].add(spike);
+        globals.entities.add(spike);
+      }
     }
-  }
-  console.log(objWorld);
+    console.log(objWorld);
 
-  selectedEntity = player;
+    selectedEntity = player;
 
-  this.cameras.main.centerOn(1000, 1000);
+    this.cameras.main.centerOn(1000, 1000);
 
-  /*   this.cameras.main.startFollow(player, true, 0.4, 0.4); */
+    /*   this.cameras.main.startFollow(player, true, 0.4, 0.4); */
 
-  graphics = this.add.graphics({
-    lineStyle: { width: 3, color: 0xffffff, alpha: 0.8 }
-    /*     fillStyle: { color: 0x00ff00, alpha: 0.8 } */
-  });
+    graphics = this.add.graphics({
+      lineStyle: { width: 3, color: 0xffffff, alpha: 0.8 }
+      /*     fillStyle: { color: 0x00ff00, alpha: 0.8 } */
+    });
 
-  // Text UI
-  pausedText = phaser.add
-    .text(0, 0, 'PAUSE\n  P', { font: '40px Courier', fill: '#ffffff' })
-    .setScrollFactor(0);
-  pausedText.setPosition(
-    phaser.cameras.main.width / 2.0 - pausedText.displayWidth / 2.0,
-    phaser.cameras.main.height / 2.0 - pausedText.displayHeight / 2.0
-  );
-  pausedText.setVisible(false);
+    // Text UI
+    pausedText = phaser.add
+      .text(0, 0, 'PAUSE\n  P', { font: '40px Courier', fill: '#ffffff' })
+      .setScrollFactor(0);
+    pausedText.setPosition(
+      phaser.cameras.main.width / 2.0 - pausedText.displayWidth / 2.0,
+      phaser.cameras.main.height / 2.0 - pausedText.displayHeight / 2.0
+    );
+    pausedText.setVisible(false);
 
-  clockText = phaser.add
-    .text(0, 0, `Time: ${levelTime.toFixed(2)}`, {
-      font: '20px Courier',
-      fill: '#ffffff'
-    })
-    .setScrollFactor(0);
+    clockText = phaser.add
+      .text(0, 0, `Time: ${levelTime.toFixed(2)}`, {
+        font: '20px Courier',
+        fill: '#ffffff'
+      })
+      .setScrollFactor(0);
 
-  /*
+    /*
   debugText = phaser.add
     .text(10, 10, 'Cursors to move', { font: '16px Courier', fill: '#ffffff' })
     .setScrollFactor(0);
     */
+  }
 }
 
 // Handle the camera scrolling
@@ -1061,10 +1243,12 @@ function update(time, delta) {
 
     // handle all Entities
     globals.entities.forEach((entity) => {
-      drawEntityActions(entity);
-
       const values = entity.data.values;
       const deque = values.actionsDeque;
+
+      if (values.type === TYPE.PLAYER && values.state !== STATE.EXPLODE) {
+        drawEntityActions(entity);
+      }
 
       // calculate end_x, end_y
       let end_x = values.x;
@@ -1079,8 +1263,6 @@ function update(time, delta) {
       values.end_y = end_y;
 
       if (deque.length > 0) {
-        // draw indicators for actions
-
         const action = deque.peek();
 
         const direction = action.direction;
@@ -1089,39 +1271,44 @@ function update(time, delta) {
 
         // time elapsed
         if (action.elapsed > action.done) {
-          if (action.state === STATE.MOVE) {
-            let stall_action = false;
+          if (values.type === TYPE.PLAYER) {
+            if (action.state === STATE.MOVE) {
+              let stall_action = false;
 
-            objWorld[nextY][nextX].forEach((obj) => {
-              if (obj !== entity && obj.data.values.type === TYPE.PLAYER) {
-                stall_action = true;
+              objWorld[nextY][nextX].forEach((obj) => {
+                if (obj !== entity && obj.data.values.type === TYPE.PLAYER) {
+                  stall_action = true;
+                }
+              });
+
+              if (!isValidMovePos(nextX, nextY)) stall_action = true;
+
+              if (stall_action) {
+                return;
               }
-            });
 
-            if (!isValidMovePos(nextX, nextY)) stall_action = true;
-
-            if (stall_action) {
-              return;
-            }
-
-            entityMoveTo(entity, nextX, nextY);
-          } else if (action.state === STATE.PUSHED) {
-            if (isValidMovePos(nextX, nextY)) {
               entityMoveTo(entity, nextX, nextY);
+            } else if (action.state === STATE.PUSHED) {
+              if (isValidMovePos(nextX, nextY)) {
+                entityMoveTo(entity, nextX, nextY);
+              }
+            } else if (action.state === STATE.PUSHING) {
+              // push all objects at position
+              objWorld[nextY][nextX].forEach((obj) => {
+                const objValues = obj.data.values;
+                // object has been pushed
+
+                // clear all previous actions
+                objValues.actionsDeque.clear();
+
+                // add pushed action to the deque
+                makePushedAction(obj, action.x, action.y);
+              });
+            } else if (action.state === STATE.EXPLODE) {
+              disableEntity(entity);
             }
-          } else if (action.state === STATE.PUSHING) {
-            // push all objects at position
-            objWorld[nextY][nextX].forEach((obj) => {
-              const objValues = obj.data.values;
-              // object has been pushed
-
-              // clear all previous actions
-              objValues.actionsDeque.clear();
-
-              // add pushed action to the deque
-              makePushedAction(obj, action.x, action.y);
-            });
           }
+
           const extraTime = action.elapsed - action.done;
 
           deque.shift();
@@ -1129,23 +1316,54 @@ function update(time, delta) {
             // transfer time to next action
             const nextAction = deque.peek();
             nextAction.elapsed += extraTime;
+
+            if (nextAction.state === STATE.SPIKE_PREP) {
+              entity.anims.play('spike_prep', false);
+              // console.log('prep');
+            } else if (nextAction.state === STATE.SPIKE_DOWN) {
+              entity.anims.play('spike_down', false);
+              // console.log('down');
+            } else if (nextAction.state === STATE.SPIKE_UP) {
+              entity.setTexture('spike_4');
+              // console.log('up');
+            }
           }
         } else {
-          // action not done
+          // action not done, or action execution on start instead of end.
           action.elapsed += dt;
-
           values.state = action.state;
 
-          entity.anims.play('walk_right', true);
+          if (values.type === TYPE.PLAYER) {
+            if (values.state === STATE.MOVE) {
+              entity.anims.play('walk_right', true);
 
-          if (direction !== null && direction !== values.direction) {
-            entity.flipX = !entity.flipX;
-            values.direction = direction;
+              if (direction !== null && direction !== values.direction) {
+                entity.flipX = !entity.flipX;
+                values.direction = direction;
+              }
+            } else if (values.state === STATE.EXPLODE) {
+              entity.anims
+                .play('explosion', true)
+                .setScale(0.8)
+                .setOrigin(0.5, 0.8);
+            }
+          } else if (values.type === TYPE.SPIKE) {
+            if (action.state === STATE.SPIKE_UP) {
+              objWorld[values.y][values.x].forEach((obj) => {
+                if (obj !== entity && obj.data.values.type === TYPE.PLAYER) {
+                  predisableEntity(obj);
+                  makeExplodeAction(obj);
+                }
+              });
+            } else if (action.state === STATE.IDLE) {
+              // console.log('idle');
+              entity.setTexture('spike_1');
+            }
           }
         }
       } else {
         values.state = STATE.IDLE;
-        entity.anims.play('idle', true);
+        values.idle();
       }
     });
 
