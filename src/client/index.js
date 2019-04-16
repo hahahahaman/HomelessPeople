@@ -261,12 +261,6 @@ function makeMoveAction(entity, x, y) {
 
   if (invalid) return;
 
-  // REMOVE
-  /*
-  values.end_x += x;
-  values.end_y += y;
-  */
-
   values.actionsDeque.push({
     state: STATE.MOVE,
     elapsed: 0.0,
@@ -276,20 +270,6 @@ function makeMoveAction(entity, x, y) {
     direction
   });
 }
-
-/*
-function isValid(x, y) {
-  let valid = true;
-
-  objWorld[y][x].forEach((obj) => {
-    if (obj.data.vales.type === TYPE.ROCK) {
-      valid = false;
-    }
-  });
-
-  return valid;
-}
-*/
 
 function isPosInWorld(worldX, worldY) {
   if (worldX >= worldWidth || worldX < 0 || worldY >= worldHeight || worldY < 0) return false;
@@ -535,24 +515,6 @@ function makeGridWorld(
   }
   return world;
 }
-
-/*
-function makeEntityWorld(
-  width = 10,
-  height = 10,
-  offset = 1000,
-  tileSize = 50
-) {
-  // grid where each cell is an array
-  const world = new Array(width);
-  for (let i = 0; i < width; i++) {
-    world[i] = new Array(height);
-    for (let j = 0; j < height; j++) {
-      world[i][j] = [];
-    }
-  }
-}
-*/
 
 function disableWorld(world) {
   for (let i = 0; i < world.length; i++) {
