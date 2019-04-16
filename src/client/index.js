@@ -15,7 +15,7 @@ const worldArray = [
   ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
   ['w', 'a', 's', 'w', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 't', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'c', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
@@ -291,6 +291,7 @@ function setEntity(
       entity.data.values.idle = idle;
     }
   });
+  objWorld[y][x].add(entity);
 }
 
 function setEntityRock(entity, { type = TYPE.ROCK, x = 0, y = 0 } = {}) {
@@ -1016,21 +1017,18 @@ function create() {
         player.data.values.y = y;
         player.data.values.end_x = x;
         player.data.values.end_y = y;
-        objWorld[y][x].add(player);
       }
       if (worldArray[y][x] === '2') {
         player2.data.values.x = x;
         player2.data.values.y = y;
         player2.data.values.end_x = x;
         player2.data.values.end_y = y;
-        objWorld[y][x].add(player2);
       }
       if (worldArray[y][x] === 'w') {
         const rock = this.add
           .sprite(0, 0, `rock_${Phaser.Math.Between(1, 3)}`)
           .setScale(1.5);
         setEntityRock(rock, { x, y });
-        objWorld[y][x].add(rock);
       }
       if (worldArray[y][x] === 'c') {
         const coin = this.add.sprite(0, 0, 'coin', 0).setScale(1.5);
@@ -1040,7 +1038,6 @@ function create() {
           x,
           y
         });
-        objWorld[y][x].add(coin);
         globals.entities.add(coin);
       }
       if (worldArray[y][x] === 's') {
@@ -1058,8 +1055,17 @@ function create() {
             makeSpikeDownAction(spike);
           }
         });
-        objWorld[y][x].add(spike);
         globals.entities.add(spike);
+      }
+      if (worldArray[y][x] === 't') {
+        const trash = this.add.sprite(0, 0, 'city', 494).setScale(3.2);
+        setEntity(trash, {
+          x,
+          y,
+          type: TYPE.TRASH,
+          color: 0x000000
+        });
+        globals.entities.add(trash);
       }
     }
     console.log(objWorld);
@@ -1275,7 +1281,8 @@ function update(time, delta) {
 
         // time elapsed
         if (action.elapsed > action.done) {
-          if (values.type === TYPE.PLAYER) {
+          // spikes and rocks cannot be moved around
+          if (values.type !== TYPE.SPIKE && values.type !== TYPE.ROCK) {
             if (action.state === STATE.MOVE) {
               let stall_action = false;
 
