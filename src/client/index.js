@@ -11,18 +11,19 @@ import * as globals from './globals';
 const worldArray = [
   ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ['w', '1', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-  ['w', 'a', 'a', 'w', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'w', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', '2', 'w'],
   ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w']
 ];
 
+/*
 const bgWorldArray = [
   ['15', '15', '15', '15', '15', '15', '15', '15'],
   ['15', '59', '04', '06', '02', '02', '60', '15'],
@@ -36,6 +37,22 @@ const bgWorldArray = [
   ['15', '14', '51', '51', '51', '51', '49', '15'],
   ['15', '61', '54', '55', '54', '53', '46', '15'],
   ['15', '15', '15', '15', '15', '15', '15', '15']
+];
+*/
+
+const bgWorldArray = [
+  ['8', '10', '10', '10', '10', '10', '10', '9'],
+  ['11', '14', '14', '14', '14', '14', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '51', '51', '51', '51', '14', '48'],
+  ['11', '14', '14', '14', '14', '14', '14', '48'],
+  ['45', '47', '47', '47', '47', '47', '47', '46']
 ];
 
 // store actual world
@@ -111,19 +128,19 @@ let phaser;
 
 function preload() {
   this.load.setBaseURL('../..');
-  this.load.image('sky', 'assets/sky.png');
-  this.load.image('ground', 'assets/platform.png');
-  this.load.image('star', 'assets/star.png');
-  this.load.image('bomb', 'assets/bomb.png');
-  this.load.spritesheet('dude', 'assets/dude.png', {
-    frameWidth: 32,
-    frameHeight: 48
-  });
   this.load.image('bg', 'assets/wallpaper.jpg');
   this.load.image('grass', 'assets/grass.jpg');
   this.load.spritesheet('homeless_guy', 'assets/homeless_right.png', {
     frameWidth: 50,
     frameHeight: 50
+  });
+
+  // 37 columns
+  // 28 rows
+  this.load.spritesheet('city', 'assets/roguelikeCity.png', {
+    frameWidth: 16,
+    frameHeight: 16,
+    spacing: 1
   });
 
   for (let i = 1; i <= 64; ++i) {
@@ -320,13 +337,13 @@ function makePushingAction(entity, x, y) {
   values.actionsDeque.push({
     state: STATE.PUSHING,
     elapsed: 0.0,
-    done: 2.0,
+    done: 1.5,
     x,
     y
   });
 }
 
-function makePushedAction(entity, moveX, moveY, done = 0.3) {
+function makePushedAction(entity, moveX, moveY, done = 0.2) {
   // any entity has to take some time to get pushed
 
   const values = entity.data.values;
@@ -505,11 +522,13 @@ function makeGridWorld(
         .sprite(
           offset + i * tileSize,
           offset + j * tileSize,
-          `bg_${bgWorldArray[j][i]}`
+          'city',
+          bgWorldArray[j][i]
+          // `bg_${bgWorldArray[j][i]}`
         )
         .setOrigin(0.5)
-        .setScale(3.125)
-        .setInteractive();
+        .setScale(3.3);
+      // .setInteractive();
 
       world[i][j] = tile;
     }
@@ -581,16 +600,16 @@ function create() {
   // input for entity
   this.input.keyboard
     .on('keydown-W', (event) => {
-      makeMoveAction(selectedEntity, 0, -1); // up is negative
+      if (!paused) makeMoveAction(selectedEntity, 0, -1); // up is negative
     })
     .on('keydown-S', (event) => {
-      makeMoveAction(selectedEntity, 0, 1); // down
+      if (!paused) makeMoveAction(selectedEntity, 0, 1); // down
     })
     .on('keydown-A', (event) => {
-      makeMoveAction(selectedEntity, -1, 0); // left
+      if (!paused) makeMoveAction(selectedEntity, -1, 0); // left
     })
     .on('keydown-D', (event) => {
-      makeMoveAction(selectedEntity, 1, 0); // right
+      if (!paused) makeMoveAction(selectedEntity, 1, 0); // right
     })
     // remove actions from actions deque
     /*
@@ -599,43 +618,42 @@ function create() {
     })
     */
     .on('keydown-X', (event) => {
-      if (selectedEntity.getData('actionsDeque').length > 0) {
-        const last_action = selectedEntity.getData('actionsDeque').pop(); // remove from back
-
-        // REMOVE
-        /*
-        selectedEntity.data.values.end_x -= last_action.x;
-        selectedEntity.data.values.end_y -= last_action.y;
-        */
+      if (!paused) {
+        if (selectedEntity.getData('actionsDeque').length > 0) {
+          selectedEntity.getData('actionsDeque').pop(); // remove from back
+        }
       }
     })
     .on('keydown-C', (event) => {
       // clear actions
-      // REMOVE
-      /*
-      selectedEntity.data.values.end_x = selectedEntity.data.values.x;
-      selectedEntity.data.values.end_y = selectedEntity.data.values.y;
-      */
-      selectedEntity.getData('actionsDeque').clear();
+      if (!paused) {
+        selectedEntity.getData('actionsDeque').clear();
+      }
     })
     .on('keydown-ONE', () => {
-      if (selectedEntity === globals.selectableEntities[0]) {
-        phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
-      } else {
-        selectedEntity = globals.selectableEntities[0];
+      if (!paused) {
+        if (selectedEntity === globals.selectableEntities[0]) {
+          phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+        } else {
+          selectedEntity = globals.selectableEntities[0];
+        }
       }
     })
     .on('keydown-TWO', () => {
-      if (selectedEntity === globals.selectableEntities[1]) {
-        phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
-      } else {
-        selectedEntity = globals.selectableEntities[1];
+      if (!paused) {
+        if (selectedEntity === globals.selectableEntities[1]) {
+          phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+        } else {
+          selectedEntity = globals.selectableEntities[1];
+        }
       }
     })
     .on('keydown-SPACE', (event) => {
-      // center on selected entity
-      if (selectedEntity) {
-        this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+      if (!paused) {
+        // center on selected entity
+        if (selectedEntity) {
+          this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
+        }
       }
     });
 
@@ -643,81 +661,83 @@ function create() {
 
   // right click push
   phaser.input.on('pointerdown', (pointer) => {
-    if (pointer.rightButtonDown() && eKeyObj.isDown) {
-      // push action
+    if (!paused) {
+      if (pointer.rightButtonDown() && eKeyObj.isDown) {
+        // push action
 
-      // check if in correct position
-      const mouseX = phaser.input.mousePointer.worldX;
-      const mouseY = phaser.input.mousePointer.worldY;
-      const end_x = selectedEntity.data.values.end_x;
-      const end_y = selectedEntity.data.values.end_y;
-      const endX = grid2world(end_x);
-      const endY = grid2world(end_y);
+        // check if in correct position
+        const mouseX = phaser.input.mousePointer.worldX;
+        const mouseY = phaser.input.mousePointer.worldY;
+        const end_x = selectedEntity.data.values.end_x;
+        const end_y = selectedEntity.data.values.end_y;
+        const endX = grid2world(end_x);
+        const endY = grid2world(end_y);
 
-      // up
-      if (
-        isPointRectOverlap(
-          mouseX,
-          mouseY,
-          endX - tileSize / 2,
-          endY - (3 * tileSize) / 2,
-          tileSize,
-          tileSize
-        )
-        && isPushablePos(end_x, end_y - 1)
-      ) {
-        console.log('push up');
-        makePushingAction(selectedEntity, 0, -1);
-      }
+        // up
+        if (
+          isPointRectOverlap(
+            mouseX,
+            mouseY,
+            endX - tileSize / 2,
+            endY - (3 * tileSize) / 2,
+            tileSize,
+            tileSize
+          )
+          && isPushablePos(end_x, end_y - 1)
+        ) {
+          console.log('push up');
+          makePushingAction(selectedEntity, 0, -1);
+        }
 
-      // down
-      if (
-        isPointRectOverlap(
-          mouseX,
-          mouseY,
-          endX - tileSize / 2,
-          endY + tileSize / 2,
-          tileSize,
-          tileSize
-        )
-        && isPushablePos(end_x, end_y + 1)
-      ) {
-        console.log('push down');
-        makePushingAction(selectedEntity, 0, 1);
-      }
+        // down
+        if (
+          isPointRectOverlap(
+            mouseX,
+            mouseY,
+            endX - tileSize / 2,
+            endY + tileSize / 2,
+            tileSize,
+            tileSize
+          )
+          && isPushablePos(end_x, end_y + 1)
+        ) {
+          console.log('push down');
+          makePushingAction(selectedEntity, 0, 1);
+        }
 
-      // left
-      if (
-        isPointRectOverlap(
-          mouseX,
-          mouseY,
+        // left
+        if (
+          isPointRectOverlap(
+            mouseX,
+            mouseY,
 
-          endX - (3 * tileSize) / 2,
-          endY - tileSize / 2,
-          tileSize,
-          tileSize
-        )
-        && isPushablePos(end_x - 1, end_y)
-      ) {
-        console.log('push left');
-        makePushingAction(selectedEntity, -1, 0);
-      }
+            endX - (3 * tileSize) / 2,
+            endY - tileSize / 2,
+            tileSize,
+            tileSize
+          )
+          && isPushablePos(end_x - 1, end_y)
+        ) {
+          console.log('push left');
+          makePushingAction(selectedEntity, -1, 0);
+        }
 
-      // right
-      if (
-        isPointRectOverlap(
-          mouseX,
-          mouseY,
+        // right
+        if (
+          isPointRectOverlap(
+            mouseX,
+            mouseY,
 
-          endX + tileSize / 2,
-          endY - tileSize / 2,
-          tileSize,
-          tileSize
-        )
-        && isPushablePos(end_x + 1, end_y)
-      ) {
-        console.log('push right');
-        makePushingAction(selectedEntity, 1, 0);
+            endX + tileSize / 2,
+            endY - tileSize / 2,
+            tileSize,
+            tileSize
+          )
+          && isPushablePos(end_x + 1, end_y)
+        ) {
+          console.log('push right');
+          makePushingAction(selectedEntity, 1, 0);
+        }
       }
     }
   });
