@@ -9,20 +9,20 @@ import * as globals from './globals';
 
 const worldArray = [
   ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-  ['w', '1', 'a', 'a', 'a', 'a', 'a', 'w'],
+  ['w', 'c', 'a', 'a', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-  ['w', 'a', 's', 'a', 'a', 'w', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-  ['w', 'a', 's', 'w', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+  ['w', 't', 'a', 'w', 'w', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 'w', 'w', 'a', 'a', 'w'],
+  ['w', 's', 'w', 'a', 'w', 'a', 'a', 'w'],
+  ['w', 'a', 's', 'a', 'w', 'a', 'a', 'w'],
+  ['w', 'w', 'w', 't', 'w', 'w', 'w', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 't', 'a', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'c', 'a', 'a', 'a', 'w'],
+  ['w', 'a', 'a', 's', 't', 'a', 'a', 'w'],
   ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-  ['w', 'a', 'a', 'a', 'a', 'a', '2', 'w'],
+  ['w', 'a', 'a', 'a', 'a', '1', '2', 'w'],
   ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w']
 ];
 
@@ -64,13 +64,7 @@ const bgWorldArray = [
 
 // store actual world
 let gridWorld;
-const objWorld = [];
-for (let h = 0; h < worldArray.length; ++h) {
-  objWorld.push([]);
-  for (let w = 0; w < worldArray[h].length; ++w) {
-    objWorld[h].push(new Set()); // list has O(n) deletion, set has O(1) deletion
-  }
-}
+let objWorld;
 
 const config = {
   type: Phaser.AUTO,
@@ -138,6 +132,13 @@ const tileSize = globals.TILE_SIZE;
 let worldHeight;
 let worldWidth;
 let phaser;
+
+let win = false;
+let gameOver = false;
+
+function restart() {
+  create();
+}
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -212,20 +213,30 @@ function predisableEntity(entity) {
   if (objWorld[values.y][values.x].has(entity)) {
     objWorld[values.y][values.x].delete(entity);
   }
-  // do a check for selectableenities...
   entity.disableInteractive();
 
-  selectedEntity = null;
-  for (let i = 0; i < globals.selectableEntities.length; ++i) {
-    if (entity === globals.selectableEntities[i]) {
-      globals.selectableEntities[i] = null;
-    } else if (selectedEntity === null) {
-      selectedEntity = globals.selectableEntities[i];
+  if (values.timeLeftText) values.timeLeftText.setVisible(false);
+  if (values.doneText) values.doneText.setVisible(false);
+
+  if (values.type === TYPE.PLAYER) {
+    // do a check for selectableentities...
+    let switchedEntity = false;
+    for (let i = 0; i < globals.selectableEntities.length; ++i) {
+      if (entity === globals.selectableEntities[i]) {
+        globals.selectableEntities[i] = null;
+      } else if (globals.selectableEntities[i] !== null && !switchedEntity) {
+        selectedEntity = globals.selectableEntities[i];
+        switchedEntity = true;
+      }
+    }
+
+    if (!switchedEntity) {
+      // can't switch entity
+      // game over
+      console.log('game over');
+      gameOver = true;
     }
   }
-
-  values.timeLeftText.setVisible(false);
-  values.doneText.setVisible(false);
 }
 
 function grid2world(val) {
@@ -677,6 +688,10 @@ function create() {
   //  regardless of their place on the display list
   this.input.setTopOnly(true);
 
+  levelTime = 0.0;
+  paused = false;
+  win = false;
+  gameOver = false;
   /*
     Handle Input
   */
@@ -739,7 +754,7 @@ function create() {
       }
     })
     .on('keydown-TWO', () => {
-      if (!paused && globals.selectableEntities[0] !== null) {
+      if (!paused && globals.selectableEntities[1] !== null) {
         if (selectedEntity === globals.selectableEntities[1]) {
           phaser.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
         } else {
@@ -875,8 +890,18 @@ function create() {
     this
   );
 
-  this.cameras.main.setBounds(0, 0, 3840, 2160);
-  this.physics.world.setBounds(0, 0, 3840, 2160);
+  this.cameras.main.setBounds(
+    0,
+    0,
+    worldWidth * tileSize + offset * 2.0,
+    worldHeight * tileSize + offset * 2.0
+  );
+  this.physics.world.setBounds(
+    0,
+    0,
+    worldWidth * tileSize + offset * 2.0,
+    worldHeight * tileSize + offset * 2.0
+  );
   this.add.image(0, 0, 'bg').setOrigin(0);
 
   cursors = this.input.keyboard.createCursorKeys();
@@ -892,6 +917,14 @@ function create() {
     globals.OFFSET,
     globals.TILE_SIZE
   );
+  objWorld = [];
+
+  for (let h = 0; h < worldArray.length; ++h) {
+    objWorld.push([]);
+    for (let w = 0; w < worldArray[h].length; ++w) {
+      objWorld[h].push(new Set()); // list has O(n) deletion, set has O(1) deletion
+    }
+  }
 
   //--------------------------------------------
   // Spikes
@@ -1058,11 +1091,11 @@ function create() {
         globals.entities.add(spike);
       }
       if (worldArray[y][x] === 't') {
-        const trash = this.add.sprite(0, 0, 'city', 494).setScale(3.2);
+        const trash = this.add.sprite(0, 0, 'city', 494).setScale(3);
         setEntity(trash, {
           x,
           y,
-          type: TYPE.TRASH,
+          type: TYPE.PLAYER,
           color: 0x000000
         });
         globals.entities.add(trash);
@@ -1072,7 +1105,7 @@ function create() {
 
     selectedEntity = player;
 
-    this.cameras.main.centerOn(1000, 1000);
+    this.cameras.main.centerOn(offset, offset);
 
     /*   this.cameras.main.startFollow(player, true, 0.4, 0.4); */
 
@@ -1281,8 +1314,8 @@ function update(time, delta) {
 
         // time elapsed
         if (action.elapsed > action.done) {
-          // spikes and rocks cannot be moved around
-          if (values.type !== TYPE.SPIKE && values.type !== TYPE.ROCK) {
+          // rocks cannot be moved around
+          if (values.type !== TYPE.ROCK) {
             if (action.state === STATE.MOVE) {
               let stall_action = false;
 
@@ -1348,24 +1381,24 @@ function update(time, delta) {
           action.elapsed += dt;
           values.state = action.state;
 
-          if (values.type === TYPE.PLAYER) {
-            if (values.state === STATE.MOVE) {
-              entity.anims.play('walk_right', true);
+          if (values.state === STATE.EXPLODE) {
+            entity.anims
+              .play('explosion', true)
+              .setScale(0.8)
+              .setOrigin(0.5, 0.8);
+          } else if (values.state === STATE.MOVE) {
+            entity.anims.play('walk_right', true);
 
-              if (direction !== null && direction !== values.direction) {
-                entity.flipX = !entity.flipX;
-                values.direction = direction;
-              }
-            } else if (values.state === STATE.EXPLODE) {
-              entity.anims
-                .play('explosion', true)
-                .setScale(0.8)
-                .setOrigin(0.5, 0.8);
+            if (direction !== null && direction !== values.direction) {
+              entity.flipX = !entity.flipX;
+              values.direction = direction;
             }
-          } else if (values.type === TYPE.SPIKE) {
+          }
+
+          if (values.type === TYPE.SPIKE) {
             if (action.state === STATE.SPIKE_UP) {
               objWorld[values.y][values.x].forEach((obj) => {
-                if (obj !== entity && obj.data.values.type === TYPE.PLAYER) {
+                if (obj !== entity) {
                   predisableEntity(obj);
                   makeExplodeAction(obj);
                 }
