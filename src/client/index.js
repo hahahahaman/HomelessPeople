@@ -28,7 +28,8 @@ const TYPE = {
   PLAYER: 'obj_player',
   SPIKE: 'obj_spike',
   TRASH: 'obj_trash',
-  COIN: 'obj_coin'
+  COIN: 'obj_coin',
+  TUTORIAL: 'obj_tutorial'
 };
 
 const offset = globals.OFFSET;
@@ -95,6 +96,7 @@ let objWorld;
 
 let player;
 let player2;
+let tutorial;
 let dummy;
 let cursors;
 let keys;
@@ -242,6 +244,16 @@ function setEntity(
   objWorld[y][x].add(entity);
 }
 
+function setEntityTutorial(scene, entity, { type = TYPE.TUTORIAL, x = 0, y = 0 } = {}) {
+  setEntity(scene, entity, {
+    type,
+    x,
+    y,
+    timeLeftText: null,
+    doneText: null
+  });
+}
+
 function setEntityRock(scene, entity, { type = TYPE.ROCK, x = 0, y = 0 } = {}) {
   setEntity(scene, entity, {
     type,
@@ -271,6 +283,19 @@ function setEntitySpike(
     */
     state: STATE.IDLE,
     idle
+  });
+}
+
+function makeTutorialAction(entity, x, y, nextActionTrigger = () => {}, image = '', scale = 1, done = 0) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    scale,
+    image,
+    x,
+    y,
+    nextActionTrigger,
+    elapsed: 0.0,
+    done
   });
 }
 
@@ -786,6 +811,12 @@ class Level extends Phaser.Scene {
     for (let i = 1; i < 5; ++i) {
       this.load.image(`spike_${i}`, `assets/spike${i}.png`);
     }
+
+    this.load.image('tut_clicktoselect', 'assets/tut_clicktoselect.png');
+    this.load.image('tut_wasd', 'assets/tut_wasd.png');
+    this.load.image('tut_clicktopush', 'assets/tut_clicktopush.png');
+    this.load.image('tut_tips', 'assets/tut_tips.png');
+    this.load.image('tut_escapepoverty', 'assets/tut_escapepoverty.png');
   }
 
   create() {
@@ -1129,6 +1160,7 @@ class Level extends Phaser.Scene {
       worldHeight * tileSize + offset * 2
     );
 
+
     player = this.add.sprite(0, 0, 'homeless_guy');
     player2 = this.add.sprite(0, 0, 'homeless_guy');
 
@@ -1226,13 +1258,14 @@ class Level extends Phaser.Scene {
           setEntity(this, trash, {
             x,
             y,
-            type: TYPE.PLAYER,
+            type: TYPE.TRASH,
             color: 0x000000
           });
           entities.add(trash);
         }
       }
       console.log(objWorld);
+
 
       selectedEntity = player;
 
@@ -1388,7 +1421,7 @@ class Level extends Phaser.Scene {
         const values = entity.data.values;
         const deque = values.actionsDeque;
 
-        if (values.state !== STATE.EXPLODE) {
+        if (values.state !== STATE.EXPLODE && values.type !== TYPE.TUTORIAL) {
           drawEntityActions(entity);
         }
 
@@ -1412,7 +1445,7 @@ class Level extends Phaser.Scene {
           const nextY = values.y + action.y;
 
           // time elapsed
-          if (action.elapsed > action.done) {
+          if (action.elapsed > action.done && values.type !== TYPE.TUTORIAL) {
             // rocks cannot be moved around
             if (values.type !== TYPE.ROCK) {
               if (action.state === STATE.MOVE) {
@@ -1475,7 +1508,7 @@ class Level extends Phaser.Scene {
                 // console.log('up');
               }
             }
-          } else {
+          } else if (values.type !== TYPE.TUTORIAL) {
             // action not done, or action execution on start instead of end.
             action.elapsed += dt;
             values.state = action.state;
@@ -1508,6 +1541,21 @@ class Level extends Phaser.Scene {
                 entity.setTexture('spike_1');
               }
             }
+          } else if (values.type === TYPE.TUTORIAL) {
+            values.action_total_time = action.done;
+            values.action_elapsed_time += dt;
+
+            entity.setTexture(action.image).setScale(action.scale);
+            values.x = action.x;
+            values.y = action.y;
+
+            if (action.nextActionTrigger() === true) {
+              deque.shift();
+              values.action_elapsed_time = 0;
+              if (deque.length <= 0) {
+                disableEntity(entity);
+              }
+            }
           }
         } else {
           values.state = STATE.IDLE;
@@ -1531,6 +1579,47 @@ class Level1 extends Level {
     super({ key: 'Level1' });
   }
 
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'a', 'a', 'c', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 't', 't', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'a', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'w', 'a', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'w', 'w', 't', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 's', 't', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'a', '1', '2', 'a', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w']
+  ];
+
+  bgWorldArray = [
+    ['792', '832', '832', '832', '832', '832', '832', '832', '793'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['829', '831', '831', '831', '831', '831', '831', '831', '830']
+  ];
+
+  // TUTORIAL TRIGGER HELPER VARIABLES
+  trashToExplode;
+
   create() {
     // put background first or make background depth negative so that it is in the back
     super.create();
@@ -1539,6 +1628,63 @@ class Level1 extends Level {
       .setOrigin(0)
       .setDepth(-10);
     // level stuff
+    // Tutorial entity
+    tutorial = this.add.sprite(0, 0, 'tut_escapepoverty').setScale(0.5);
+    entities.add(tutorial);
+    setEntityTutorial(this, tutorial, { depth: 0, x: 4, y: 2 });
+
+    // Setups for triggers for tutorial actions
+    makeTutorialAction(tutorial, 4, 11, () => {
+      const values = tutorial.data.values;
+      if (values.action_elapsed_time > values.action_total_time) {
+        console.log('time up');
+        return true;
+      }
+      if (selectedEntity.data.values.state === STATE.MOVE) {
+        return true;
+      }
+      return false;
+    }, 'tut_clicktoselect', 0.5, 10);
+
+    makeTutorialAction(tutorial, 4, 11, () => {
+      const values = tutorial.data.values;
+      if (values.action_elapsed_time > values.action_total_time) {
+        console.log('time up');
+        return true;
+      }
+      return false;
+    }, 'tut_wasd', 0.5, 15);
+
+    objWorld[12][4].forEach((entity) => {
+      if (entity.data.values.type === TYPE.TRASH) {
+        this.trashToExplode = entity;
+      }
+    });
+    makeTutorialAction(tutorial, 4, 11, () => {
+      if (this.trashToExplode.data.values.state === STATE.EXPLODE) {
+        return true;
+      }
+      return false;
+    }, 'tut_clicktopush', 0.5, 25);
+
+    makeTutorialAction(tutorial, 4, 11, () => {
+      const values = tutorial.data.values;
+      if (values.action_elapsed_time > values.action_total_time) {
+        console.log('time up');
+        return true;
+      }
+
+      let trueFlag = false;
+      entities.forEach((entity) => {
+        const v = entity.data.values;
+        if (v.type === TYPE.PLAYER && v.y <= 8) {
+          trueFlag = true;
+        }
+      });
+      return trueFlag;
+    }, 'tut_tips', 0.5, 25);
+
+    makeTutorialAction(tutorial, 4, 2, () => {}, 'tut_escapepoverty', 0.5);
   }
 
   update(time, delta) {
