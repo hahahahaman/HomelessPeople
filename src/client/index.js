@@ -736,7 +736,7 @@ class LevelIntro1 extends LevelIntro {
       .setScrollFactor(0);
 
     this.title.setPosition(
-      width / 2.0 - this.title.displayWidth/ 2.0,
+      width / 2.0 - this.title.displayWidth / 2.0,
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
@@ -745,10 +745,8 @@ class LevelIntro1 extends LevelIntro {
 
     setTimeout(() => {
       this.scene.start('Level1');
-    }, 3900);
+    }, 3700);
   }
-
-  update(time, delta) {}
 }
 
 class Level extends Phaser.Scene {
@@ -1594,6 +1592,7 @@ class Level extends Phaser.Scene {
 class Level1 extends Level {
   constructor() {
     super({ key: 'Level1' });
+    this.nextSceneKey = 'LevelIntro2';
   }
 
   create() {
@@ -1609,6 +1608,143 @@ class Level1 extends Level {
   update(time, delta) {
     super.update(time, delta);
   }
+}
+
+class LevelIntro2 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro2' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level2');
+    }, 4000);
+  }
+}
+
+class Level2 extends Level {
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', '1', 'w', 'a', 'a', 's', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', '2', 'a', 'a', 'w', 's', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
+
+  constructor() {
+    super({ key: 'Level2' });
+    this.nextSceneKey = 'LevelIntro3';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+}
+
+class LevelIntro3 extends LevelIntro {}
+
+class Level3 extends Level {}
+
+class LevelIntro4 extends LevelIntro {}
+
+class Level4 extends Level {}
+
+class LevelIntro5 extends LevelIntro {}
+
+class Level5 extends Level {}
+
+class LevelIntro6 extends LevelIntro {}
+
+class Level6 extends Level {}
+
+class LevelIntro7 extends LevelIntro {}
+
+class Level7 extends Level {}
+
+class LevelIntro8 extends LevelIntro {}
+
+class Level8 extends Level {}
+
+class LevelIntro9 extends LevelIntro {}
+
+class Level9 extends Level {}
+
+class LevelIntro10 extends LevelIntro {}
+
+class Level10 extends Level {}
+
+class LevelIntroEnd extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntroEnd' });
+  }
+
+  preload() {
+    this.load.audio('outro', ['assets/audio/whatafuckingloser.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'Unfortunately Bitconnect is a scam.\n\nYou lose.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('outro');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('LevelIntro1');
+    }, 5000);
+  }
+
+  update(time, delta) {}
 }
 
 // --------------------------------------
@@ -1637,7 +1773,7 @@ const config = {
     update
   }
   */
-  scene: [LevelIntro1, Level1]
+  scene: [LevelIntro2, Level2]
 };
 
 const game = new Phaser.Game(config); // main process
