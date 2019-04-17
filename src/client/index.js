@@ -792,6 +792,8 @@ class Level extends Phaser.Scene {
 
   nextSceneKey;
 
+  coinSounds;
+
   preload() {
     this.load.setBaseURL('../..');
     this.load.image('bg', 'assets/wallpaper.jpg');
@@ -831,6 +833,9 @@ class Level extends Phaser.Scene {
     for (let i = 1; i < 5; ++i) {
       this.load.image(`spike_${i}`, `assets/spike${i}.png`);
     }
+
+    this.load.audio('bitconnect1', ['assets/audio/bitconnect1.ogg']);
+    this.load.audio('bitconnect2', ['assets/audio/bitconnect2.ogg']);
   }
 
   create() {
@@ -851,6 +856,11 @@ class Level extends Phaser.Scene {
     drawFuncs = new Set();
 
     selectableEntities = [];
+
+    this.coinSounds = [
+      this.sound.add('bitconnect1'),
+      this.sound.add('bitconnect2')
+    ];
 
     /*
     Handle Input
@@ -1320,7 +1330,7 @@ class Level extends Phaser.Scene {
         setTimeout(() => {
           if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
           else this.scene.restart();
-        }, 1234);
+        }, 6000);
       }
     }
 
@@ -1573,6 +1583,11 @@ class Level extends Phaser.Scene {
           objWorld[values.y][values.x].forEach((obj) => {
             if (obj.data.values.type === TYPE.COIN) {
               disableEntity(obj);
+
+              // play the sound
+              this.coinSounds[
+                Phaser.Math.Between(0, this.coinSounds.length - 1)
+              ].play();
             }
           });
         }
@@ -1648,17 +1663,169 @@ class LevelIntro2 extends LevelIntro {
 
 class Level2 extends Level {
   worldArray = [
-    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', '1', 'w', 'a', 'a', 's', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', '2', 'a', 'a', 'w', 's', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    [
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      '1',
+      'w',
+      'a',
+      'a',
+      's',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'w'
+    ],
+    [
+      'w',
+      '2',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      's',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w'
+    ]
   ];
 
   bgWorldArray = [
-    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+    [
+      '8',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '9'
+    ],
+    [
+      '11',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '48'
+    ],
+    [
+      '45',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '46'
+    ]
   ];
 
   constructor() {
