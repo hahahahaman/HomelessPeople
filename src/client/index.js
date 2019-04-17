@@ -1957,7 +1957,6 @@ class Level3 extends Level {
       .setDepth(-10);
     // level stuff
   }
-
 }
 
 class LevelIntro4 extends LevelIntro {
