@@ -276,6 +276,8 @@ function setEntity(
     y = 0,
     end_x = 0,
     end_y = 0,
+    action_elapsed_time = 0,
+    action_total_time = 0,
     moveSpeed = 0.5,
     direction = DIRECTION.RIGHT,
     color = 0xffffff,
@@ -301,6 +303,8 @@ function setEntity(
     .set('y', y)
     .set('end_x', end_x)
     .set('end_y', end_y)
+    .set('action_elapsed_time', action_elapsed_time)
+    .set('action_total_time', action_total_time)
     .set('moveSpeed', moveSpeed) // seconds per block
     .set('direction', direction)
     .set('color', color)
@@ -534,106 +538,140 @@ function drawEntityActions(entity) {
   const deque = values.actionsDeque;
 
   let totalTime = 0.0;
-  deque.forEach((action) => {
-    totalTime += action.done;
-    const nextX = movePosX + action.x * tileSize;
-    const nextY = movePosY + action.y * tileSize;
-    if (action.state === STATE.MOVE) {
-      // Draw all the move stuff
-      const line = new Phaser.Geom.Line(movePosX, movePosY, nextX, nextY);
 
-      const triangle = new Phaser.Geom.Triangle.BuildEquilateral(
-        0,
-        0,
-        tileSize / 4.0
+  if (values.type === TYPE.PLAYER) {
+    deque.forEach((action) => {
+      totalTime += action.done;
+      const nextX = movePosX + action.x * tileSize;
+      const nextY = movePosY + action.y * tileSize;
+      if (action.state === STATE.MOVE) {
+        // Draw all the move stuff
+        const line = new Phaser.Geom.Line(movePosX, movePosY, nextX, nextY);
+
+        const triangle = new Phaser.Geom.Triangle.BuildEquilateral(
+          0,
+          0,
+          tileSize / 4.0
+        );
+
+        // rotate triangle
+        if (action.x > 0) {
+          Phaser.Geom.Triangle.Rotate(triangle, Math.PI / 2);
+        } else if (action.x < 0) {
+          Phaser.Geom.Triangle.Rotate(triangle, -Math.PI / 2);
+        }
+
+        if (action.y > 0) {
+          Phaser.Geom.Triangle.Rotate(triangle, Math.PI);
+        }
+        Phaser.Geom.Triangle.CenterOn(
+          triangle,
+          movePosX + (action.x * tileSize) / 2.0,
+          movePosY + (action.y * tileSize) / 2.0
+        );
+
+        graphics.lineStyle(2, values.color, 0.7); // width, color, alpha
+        graphics.strokeTriangleShape(triangle);
+
+        graphics.lineStyle(3, values.color, 0.5); // width, color, alpha
+        graphics.strokeLineShape(line);
+        movePosX = nextX;
+        movePosY = nextY;
+      } else if (action.state === STATE.PUSHING) {
+        const radius = tileSize / 8;
+        const line = new Phaser.Geom.Line(movePosX, movePosY, nextX, nextY);
+        graphics.lineStyle(2, values.color, 0.9);
+        graphics.strokeCircle(nextX, nextY, radius);
+
+        graphics.lineStyle(4, values.color, 0.9); // width, color, alpha
+        graphics.strokeLineShape(line);
+      } else if (action.state === STATE.PUSHED) {
+        // triangle with a cirlce in it?
+        // TODO
+      }
+    });
+
+    if (deque.length > 0) {
+      // draw current action indicators
+      const action = deque.peek();
+      const w = tileSize / 10.0;
+      const h = tileSize * (1.0 - action.elapsed / action.done);
+
+      // bar indicator for current action
+      graphics.fillStyle(values.color, 0.8);
+      graphics.fillRect(
+        entity.x - tileSize / 2.0,
+        entity.y - tileSize / 2.0,
+        w,
+        h
       );
 
-      // rotate triangle
-      if (action.x > 0) {
-        Phaser.Geom.Triangle.Rotate(triangle, Math.PI / 2);
-      } else if (action.x < 0) {
-        Phaser.Geom.Triangle.Rotate(triangle, -Math.PI / 2);
-      }
-
-      if (action.y > 0) {
-        Phaser.Geom.Triangle.Rotate(triangle, Math.PI);
-      }
-      Phaser.Geom.Triangle.CenterOn(
-        triangle,
-        movePosX + (action.x * tileSize) / 2.0,
-        movePosY + (action.y * tileSize) / 2.0
+      // elapsed time text
+      totalTime -= action.elapsed;
+      const timeLeftText = values.timeLeftText;
+      timeLeftText.setVisible(true);
+      timeLeftText.setText(`${totalTime.toFixed(1)}`);
+      timeLeftText.setPosition(
+        entity.x + tileSize / 2.0,
+        entity.y - tileSize / 2.0
       );
 
-      graphics.lineStyle(2, values.color, 0.7); // width, color, alpha
-      graphics.strokeTriangleShape(triangle);
+      // done time indicator
+      const doneText = values.doneText;
+      doneText.setVisible(true);
+      doneText.setText(`${(levelTime + totalTime).toFixed(1)}`);
+      doneText.setPosition(movePosX, movePosY);
 
-      graphics.lineStyle(3, values.color, 0.5); // width, color, alpha
-      graphics.strokeLineShape(line);
-      movePosX = nextX;
-      movePosY = nextY;
-    } else if (action.state === STATE.PUSHING) {
-      const radius = tileSize / 8;
-      const line = new Phaser.Geom.Line(movePosX, movePosY, nextX, nextY);
-      graphics.lineStyle(2, values.color, 0.9);
-      graphics.strokeCircle(nextX, nextY, radius);
+      // end position indicator
+      const end_x = values.end_x;
+      const end_y = values.end_y;
+      const endX = grid2world(end_x);
+      const endY = grid2world(end_y);
 
-      graphics.lineStyle(4, values.color, 0.9); // width, color, alpha
-      graphics.strokeLineShape(line);
-    } else if (action.state === STATE.PUSHED) {
-      // triangle with a cirlce in it?
-      // TODO
+      graphics.lineStyle(2, values.color, 0.7);
+      graphics.strokeRect(
+        endX - tileSize / 2,
+        endY - tileSize / 2,
+        tileSize,
+        tileSize
+      );
+    } else {
+      // no actions
+      // disable text indicator
+      values.timeLeftText.setVisible(false);
+      values.doneText.setVisible(false);
     }
-  });
+  } else if (values.type === TYPE.SPIKE) {
+    if (values.action_elapsed_time > values.action_total_time) {
+      values.timeLeftText.setVisible(false);
+      values.doneText.setVisible(false);
+    } else {
+      const w = tileSize / 10.0;
+      const h = tileSize * (1.0 - values.action_elapsed_time / values.action_total_time);
+      graphics.fillStyle(values.color, 0.8);
+      graphics.fillRect(
+        entity.x - tileSize / 2.0,
+        entity.y - tileSize / 2.0,
+        w,
+        h
+      );
 
-  if (deque.length > 0) {
-    // draw current action indicators
-    const action = deque.peek();
-    const w = tileSize / 10.0;
-    const h = tileSize * (1.0 - action.elapsed / action.done);
+      // elapsed time text
+      totalTime = values.action_total_time - values.action_elapsed_time;
+      const timeLeftText = values.timeLeftText;
+      timeLeftText.setVisible(true);
+      timeLeftText.setText(`${(totalTime).toFixed(1)}`);
+      timeLeftText.setPosition(
+        entity.x + tileSize / 2.0,
+        entity.y - tileSize / 2.0
+      );
 
-    // bar indicator for current action
-    graphics.fillStyle(values.color, 0.8);
-    graphics.fillRect(
-      entity.x - tileSize / 2.0,
-      entity.y - tileSize / 2.0,
-      w,
-      h
-    );
-
-    // elapsed time text
-    totalTime -= action.elapsed;
-    const timeLeftText = values.timeLeftText;
-    timeLeftText.setVisible(true);
-    timeLeftText.setText(`${totalTime.toFixed(1)}`);
-    timeLeftText.setPosition(
-      entity.x + tileSize / 2.0,
-      entity.y - tileSize / 2.0
-    );
-
-    // done time indicator
-    const doneText = values.doneText;
-    doneText.setVisible(true);
-    doneText.setText(`${(levelTime + totalTime).toFixed(1)}`);
-    doneText.setPosition(movePosX, movePosY);
-
-    // end position indicator
-    const end_x = values.end_x;
-    const end_y = values.end_y;
-    const endX = grid2world(end_x);
-    const endY = grid2world(end_y);
-
-    graphics.lineStyle(2, values.color, 0.7);
-    graphics.strokeRect(
-      endX - tileSize / 2,
-      endY - tileSize / 2,
-      tileSize,
-      tileSize
-    );
-  } else {
-    // no actions
-    // disable text indicator
-    values.timeLeftText.setVisible(false);
-    values.doneText.setVisible(false);
+      // done time indicator
+      const doneText = values.doneText;
+      doneText.setVisible(true);
+      doneText.setText(`${(levelTime + totalTime).toFixed(1)}`);
+      doneText.setPosition(entity.x + tileSize / 2.0, entity.y + tileSize / 5.0);
+    }
   }
 }
 
@@ -726,7 +764,7 @@ function create() {
     paused = !paused;
     pausedText.setVisible(paused);
     if (paused) {
-      this.cameras.main.setAlpha(0.8);
+      this.cameras.main.setAlpha(0.7);
       disableWorld(gridWorld);
       disableEntities();
     } else {
@@ -1115,6 +1153,8 @@ function create() {
           y,
           idle: () => {
             spike.setTexture('spike_1');
+            spike.data.set('action_elapsed_time', 0);
+            spike.data.set('action_total_time', 1.833); // time until spike up.
             makeSpikeIdleAction(spike);
             makeSpikePrepAction(spike);
             makeSpikeUpAction(spike);
@@ -1149,8 +1189,11 @@ function create() {
 
     // Text UI
     pausedText = phaser.add
-      .text(0, 0, 'PAUSE\n  P', { font: '40px Courier', fill: '#ffffff' })
-      .setScrollFactor(0);
+      .text(0, 0, 'PAUSE\n  P', {
+        font: '40px Courier', fill: '#ffffff', stroke: '#000000', strokeThickness: 1
+      })
+      .setScrollFactor(0)
+      .setDepth(10);
     pausedText.setPosition(
       phaser.cameras.main.width / 2.0 - pausedText.displayWidth / 2.0,
       phaser.cameras.main.height / 2.0 - pausedText.displayHeight / 2.0
@@ -1429,6 +1472,7 @@ function update(time, delta) {
           }
 
           if (values.type === TYPE.SPIKE) {
+            values.action_elapsed_time += dt;
             if (action.state === STATE.SPIKE_UP) {
               objWorld[values.y][values.x].forEach((obj) => {
                 if (obj !== entity) {
