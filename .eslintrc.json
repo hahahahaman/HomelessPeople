@@ -18,6 +18,7 @@
     "linebreak-style": 0,
     "properties": "never",
     "camelcase": "off",
-    "no-param-reassign": "off"
+    "no-param-reassign": "off",
+    "class-methods-use-this": "off"
   }
 }
