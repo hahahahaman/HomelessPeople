@@ -111,6 +111,7 @@ let eKeyObj;
 let worldHeight;
 let worldWidth;
 
+let coins;
 let win = false;
 let gameOver = false;
 let entities;
@@ -130,6 +131,10 @@ function enableEntities() {
 }
 
 function disableEntity(entity) {
+  if (entity.data.values.type === TYPE.COIN) {
+    coins--;
+  }
+
   predisableEntity(entity);
   if (entities.has(entity)) {
     entities.delete(entity);
@@ -717,14 +722,56 @@ function handleScrolling(_this, camera, dt) {
 // --------------------------------------
 
 class LevelIntro extends Phaser.Scene {
-  // text, timer, sound clip
-  // after a set period of time the intro goes to the level
+  title;
 
-  preload() {}
+  preload() {
+    this.load.setBaseURL('../..');
+  }
 
   create() {}
 
   update(time, delta) {}
+}
+
+class LevelIntro1 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro1' });
+  }
+
+  preload() {
+    this.load.audio('heyheyhey', ['assets/audio/heyheyhey.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(
+        0,
+        0,
+        'Homeless People\n\nDiscretely Getting Money\n\nto Invest in Bitconnect.',
+        {
+          font: '20px Courier',
+          fill: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 4
+        }
+      )
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('heyheyhey');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level1');
+    }, 3700);
+  }
 }
 
 class Level extends Phaser.Scene {
@@ -768,9 +815,9 @@ class Level extends Phaser.Scene {
     ['45', '47', '47', '47', '47', '47', '47', '46']
   ];
 
-  constructor() {
-    super({ key: 'Level' });
-  }
+  nextSceneKey;
+
+  coinSounds;
 
   preload() {
     this.load.setBaseURL('../..');
@@ -817,6 +864,8 @@ class Level extends Phaser.Scene {
     this.load.image('tut_clicktopush', 'assets/tut_clicktopush.png');
     this.load.image('tut_tips', 'assets/tut_tips.png');
     this.load.image('tut_escapepoverty', 'assets/tut_escapepoverty.png');
+    this.load.audio('bitconnect1', ['assets/audio/bitconnect1.ogg']);
+    this.load.audio('bitconnect2', ['assets/audio/bitconnect2.ogg']);
   }
 
   create() {
@@ -829,6 +878,7 @@ class Level extends Phaser.Scene {
 
     levelTime = 0.0;
 
+    coins = 0;
     win = false;
     gameOver = false;
 
@@ -836,6 +886,11 @@ class Level extends Phaser.Scene {
     drawFuncs = new Set();
 
     selectableEntities = [];
+
+    this.coinSounds = [
+      this.sound.add('bitconnect1'),
+      this.sound.add('bitconnect2')
+    ];
 
     /*
     Handle Input
@@ -919,18 +974,6 @@ class Level extends Phaser.Scene {
         console.log('restart');
         this.scene.restart();
       });
-
-    this.input.manager.enabled = true;
-
-    this.input.keyboard.on(
-      'keydown-R',
-      function () {
-        console.log('restart');
-        console.log(this.scene);
-        this.scene.restart();
-      },
-      this
-    );
 
     eKeyObj = this.input.keyboard.addKey('E');
 
@@ -1233,6 +1276,7 @@ class Level extends Phaser.Scene {
             y
           });
           entities.add(coin);
+          coins++;
         }
         if (this.worldArray[y][x] === 's') {
           const spike = this.add.sprite(0, 0, 'spike_1').setScale(2.5);
@@ -1254,7 +1298,9 @@ class Level extends Phaser.Scene {
           entities.add(spike);
         }
         if (this.worldArray[y][x] === 't') {
-          const trash = this.add.sprite(0, 0, 'city', 494).setScale(3);
+          const trash = this.add
+            .sprite(0, 0, 'city', Phaser.Math.Between(143, 145))
+            .setScale(2.5);
           setEntity(this, trash, {
             x,
             y,
@@ -1264,12 +1310,12 @@ class Level extends Phaser.Scene {
           entities.add(trash);
         }
       }
-      console.log(objWorld);
+      // console.log(objWorld);
 
 
       selectedEntity = player;
 
-      this.cameras.main.centerOn(offset, offset);
+      this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
 
       /*   this.cameras.main.startFollow(player, true, 0.4, 0.4); */
 
@@ -1304,6 +1350,22 @@ class Level extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (gameOver) {
+      this.scene.restart();
+      return;
+    }
+
+    if (coins === 0) {
+      if (!win) {
+        win = true;
+
+        setTimeout(() => {
+          if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
+          else this.scene.restart();
+        }, 6000);
+      }
+    }
+
     const dt = delta / 1000;
     const camera = this.cameras.main;
 
@@ -1517,7 +1579,8 @@ class Level extends Phaser.Scene {
               entity.anims
                 .play('explosion', true)
                 .setScale(0.8)
-                .setOrigin(0.5, 0.8);
+                .setOrigin(0.5, 0.8)
+                .setDepth(10);
             } else if (values.state === STATE.MOVE) {
               entity.anims.play('walk_right', true);
 
@@ -1561,6 +1624,16 @@ class Level extends Phaser.Scene {
           values.state = STATE.IDLE;
           values.idle();
         }
+
+        // coin collection
+        if (values.type === TYPE.PLAYER) {
+          objWorld[values.y][values.x].forEach((obj) => {
+            if (obj.data.values.type === TYPE.COIN) {
+              disableEntity(obj);
+              this.coinSounds[Phaser.Math.Between(0, this.coinSounds.length - 1)].play();
+            }
+          });
+        }
       });
 
       clockText.setText(`Time: ${levelTime.toFixed(1)}`);
@@ -1577,6 +1650,7 @@ class Level extends Phaser.Scene {
 class Level1 extends Level {
   constructor() {
     super({ key: 'Level1' });
+    this.nextSceneKey = 'LevelIntro2';
   }
 
   worldArray = [
@@ -1692,6 +1766,143 @@ class Level1 extends Level {
   }
 }
 
+class LevelIntro2 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro2' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level2');
+    }, 4000);
+  }
+}
+
+class Level2 extends Level {
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', '1', 'w', 'a', 'a', 's', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', '2', 'a', 'a', 'w', 's', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
+
+  constructor() {
+    super({ key: 'Level2' });
+    this.nextSceneKey = 'LevelIntro3';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+}
+
+class LevelIntro3 extends LevelIntro {}
+
+class Level3 extends Level {}
+
+class LevelIntro4 extends LevelIntro {}
+
+class Level4 extends Level {}
+
+class LevelIntro5 extends LevelIntro {}
+
+class Level5 extends Level {}
+
+class LevelIntro6 extends LevelIntro {}
+
+class Level6 extends Level {}
+
+class LevelIntro7 extends LevelIntro {}
+
+class Level7 extends Level {}
+
+class LevelIntro8 extends LevelIntro {}
+
+class Level8 extends Level {}
+
+class LevelIntro9 extends LevelIntro {}
+
+class Level9 extends Level {}
+
+class LevelIntro10 extends LevelIntro {}
+
+class Level10 extends Level {}
+
+class LevelIntroEnd extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntroEnd' });
+  }
+
+  preload() {
+    this.load.audio('outro', ['assets/audio/whatafuckingloser.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'Unfortunately Bitconnect is a scam.\n\nYou lose.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('outro');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('LevelIntro1');
+    }, 5000);
+  }
+
+  update(time, delta) {}
+}
+
 // --------------------------------------
 // Game Init
 // --------------------------------------
@@ -1718,7 +1929,7 @@ const config = {
     update
   }
   */
-  scene: [Level1]
+  scene: [LevelIntro1, Level1, LevelIntro2, Level2]
 };
 
 const game = new Phaser.Game(config); // main process
