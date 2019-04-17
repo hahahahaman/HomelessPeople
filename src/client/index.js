@@ -1219,7 +1219,9 @@ class Level extends Phaser.Scene {
           entities.add(spike);
         }
         if (this.worldArray[y][x] === 't') {
-          const trash = this.add.sprite(0, 0, 'city', 494).setScale(3);
+          const trash = this.add
+            .sprite(0, 0, 'city', Phaser.Math.Between(143, 145))
+            .setScale(2.5);
           setEntity(this, trash, {
             x,
             y,
@@ -1229,11 +1231,11 @@ class Level extends Phaser.Scene {
           entities.add(trash);
         }
       }
-      console.log(objWorld);
+      // console.log(objWorld);
 
       selectedEntity = player;
 
-      this.cameras.main.centerOn(offset, offset);
+      this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
 
       /*   this.cameras.main.startFollow(player, true, 0.4, 0.4); */
 
@@ -1273,10 +1275,15 @@ class Level extends Phaser.Scene {
       return;
     }
 
-    if(coins === 0){
-      if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
-      else this.scene.restart();
-      return;
+    if (coins === 0) {
+      if (!win) {
+        win = true;
+
+        setTimeout(() => {
+          if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
+          else this.scene.restart();
+        }, 1234);
+      }
     }
 
     const dt = delta / 1000;
@@ -1492,7 +1499,8 @@ class Level extends Phaser.Scene {
               entity.anims
                 .play('explosion', true)
                 .setScale(0.8)
-                .setOrigin(0.5, 0.8);
+                .setOrigin(0.5, 0.8)
+                .setDepth(10);
             } else if (values.state === STATE.MOVE) {
               entity.anims.play('walk_right', true);
 
