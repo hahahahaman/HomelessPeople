@@ -697,12 +697,56 @@ function handleScrolling(_this, camera, dt) {
 // --------------------------------------
 
 class LevelIntro extends Phaser.Scene {
-  // text, timer, sound clip
-  // after a set period of time the intro goes to the level
+  title;
 
-  preload() {}
+  preload() {
+    this.load.setBaseURL('../..');
+  }
 
   create() {}
+
+  update(time, delta) {}
+}
+
+class LevelIntro1 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro1' });
+  }
+
+  preload() {
+    this.load.audio('heyheyhey', ['assets/audio/heyheyhey.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(
+        0,
+        0,
+        'Homeless People\n\nDiscretely Getting Money\n\nto Invest in Bitconnect.',
+        {
+          font: '20px Courier',
+          fill: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 4
+        }
+      )
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth/ 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('heyheyhey');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level1');
+    }, 3900);
+  }
 
   update(time, delta) {}
 }
@@ -749,10 +793,6 @@ class Level extends Phaser.Scene {
   ];
 
   nextSceneKey;
-
-  constructor() {
-    super({ key: 'Level' });
-  }
 
   preload() {
     this.load.setBaseURL('../..');
@@ -1597,7 +1637,7 @@ const config = {
     update
   }
   */
-  scene: [Level1]
+  scene: [LevelIntro1, Level1]
 };
 
 const game = new Phaser.Game(config); // main process
