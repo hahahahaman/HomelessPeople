@@ -864,6 +864,8 @@ class Level extends Phaser.Scene {
     this.load.image('tut_clicktopush', 'assets/tut_clicktopush.png');
     this.load.image('tut_tips', 'assets/tut_tips.png');
     this.load.image('tut_escapepoverty', 'assets/tut_escapepoverty.png');
+    this.load.image('tut_scroll', 'assets/tut_scroll.png');
+
     this.load.audio('bitconnect1', ['assets/audio/bitconnect1.ogg']);
     this.load.audio('bitconnect2', ['assets/audio/bitconnect2.ogg']);
   }
@@ -1305,7 +1307,7 @@ class Level extends Phaser.Scene {
             x,
             y,
             type: TYPE.TRASH,
-            color: 0x000000
+            color: 0x000000,
           });
           entities.add(trash);
         }
@@ -1679,9 +1681,9 @@ class Level1 extends Level {
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
-    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
-    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
-    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '824', '823', '823', '823', '823', '823', '824', '794'],
+    ['795', '716', '716', '716', '716', '716', '716', '716', '794'],
+    ['795', '824', '823', '823', '823', '823', '823', '824', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
@@ -1719,6 +1721,15 @@ class Level1 extends Level {
       }
       return false;
     }, 'tut_clicktoselect', 0.5, 10);
+
+    makeTutorialAction(tutorial, 4, 11, () => {
+      const values = tutorial.data.values;
+      if (values.action_elapsed_time > values.action_total_time) {
+        console.log('time up');
+        return true;
+      }
+      return false;
+    }, 'tut_scroll', 0.5, 10);
 
     makeTutorialAction(tutorial, 4, 11, () => {
       const values = tutorial.data.values;
@@ -1929,7 +1940,8 @@ const config = {
     update
   }
   */
-  scene: [LevelIntro1, Level1, LevelIntro2, Level2]
+  // scene: [LevelIntro1, Level1, LevelIntro2, Level2]
+  scene: [Level1]
 };
 
 const game = new Phaser.Game(config); // main process
