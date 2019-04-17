@@ -7,6 +7,34 @@ import Set from 'collections/set';
 
 import * as globals from './globals';
 
+class SceneA extends Phaser.Scene {
+  constructor() {
+    super({ key: 'sceneA' });
+  }
+
+  preload() {}
+
+  create() {
+    this.cameras.main.fadeFrom(
+      2000,
+      Phaser.Math.Between(50, 255),
+      Phaser.Math.Between(50, 255),
+      Phaser.Math.Between(50, 255)
+    );
+
+    this.input.manager.enabled = true;
+
+    this.input.keyboard.on(
+      'keydown-R',
+      function () {
+        console.log('restart');
+        this.scene.restart();
+      },
+      this
+    );
+  }
+}
+
 const worldArray = [
   ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ['w', 'c', 'a', 'a', 'a', 'a', 'a', 'w'],
@@ -86,6 +114,7 @@ const config = {
     create,
     update
   }
+  // scene: [SceneA]
 };
 
 const game = new Phaser.Game(config); // main process
@@ -135,10 +164,6 @@ let phaser;
 
 let win = false;
 let gameOver = false;
-
-function restart() {
-  create();
-}
 
 function preload() {
   this.load.setBaseURL('../..');
@@ -692,6 +717,7 @@ function create() {
   paused = false;
   win = false;
   gameOver = false;
+
   /*
     Handle Input
   */
@@ -768,6 +794,11 @@ function create() {
         if (selectedEntity) {
           this.cameras.main.centerOn(selectedEntity.x, selectedEntity.y);
         }
+      }
+    })
+    .on('keydown-R', (event) => {
+      if (!paused) {
+        console.log('restart');
       }
     });
 
@@ -890,22 +921,10 @@ function create() {
     this
   );
 
-  this.cameras.main.setBounds(
-    0,
-    0,
-    worldWidth * tileSize + offset * 2.0,
-    worldHeight * tileSize + offset * 2.0
-  );
-  this.physics.world.setBounds(
-    0,
-    0,
-    worldWidth * tileSize + offset * 2.0,
-    worldHeight * tileSize + offset * 2.0
-  );
-  this.add.image(0, 0, 'bg').setOrigin(0);
-
   cursors = this.input.keyboard.createCursorKeys();
   keys = this.input.keyboard.addKeys('W,A,S,D');
+
+  this.add.image(0, 0, 'bg').setOrigin(0);
 
   // Make grid based on world size.
   worldHeight = worldArray.length;
@@ -925,6 +944,20 @@ function create() {
       objWorld[h].push(new Set()); // list has O(n) deletion, set has O(1) deletion
     }
   }
+
+  // bounds
+  this.cameras.main.setBounds(
+    0,
+    0,
+    worldWidth * tileSize + offset * 2,
+    worldHeight * tileSize + offset * 2
+  );
+  this.physics.world.setBounds(
+    0,
+    0,
+    worldWidth * tileSize + offset * 2,
+    worldHeight * tileSize + offset * 2
+  );
 
   //--------------------------------------------
   // Spikes
@@ -956,7 +989,7 @@ function create() {
     key: 'explosion',
     frames: this.anims.generateFrameNumbers('explosion', {
       start: 0,
-      end: 11
+      end: 12
     }),
     frameRate: 10,
     repeat: 0
