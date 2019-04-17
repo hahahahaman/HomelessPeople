@@ -866,6 +866,8 @@ class Level extends Phaser.Scene {
     this.load.image('tut_clicktopush', 'assets/tut_clicktopush.png');
     this.load.image('tut_tips', 'assets/tut_tips.png');
     this.load.image('tut_escapepoverty', 'assets/tut_escapepoverty.png');
+    this.load.image('tut_scroll', 'assets/tut_scroll.png');
+
     this.load.audio('bitconnect1', ['assets/audio/bitconnect1.ogg']);
     this.load.audio('bitconnect2', ['assets/audio/bitconnect2.ogg']);
     this.load.audio('bitconnect3', ['assets/audio/woah.ogg']);
@@ -1326,7 +1328,7 @@ class Level extends Phaser.Scene {
             x,
             y,
             type: TYPE.TRASH,
-            color: 0x000000
+            color: 0x000000,
           });
           entities.add(trash);
         }
@@ -1704,9 +1706,9 @@ class Level1 extends Level {
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
-    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
-    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
-    ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '824', '823', '823', '823', '823', '823', '824', '794'],
+    ['795', '716', '716', '716', '716', '716', '716', '716', '794'],
+    ['795', '824', '823', '823', '823', '823', '823', '824', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
     ['795', '714', '714', '714', '714', '714', '714', '714', '794'],
@@ -1744,6 +1746,15 @@ class Level1 extends Level {
       }
       return false;
     }, 'tut_clicktoselect', 0.5, 10);
+
+    makeTutorialAction(tutorial, 4, 11, () => {
+      const values = tutorial.data.values;
+      if (values.action_elapsed_time > values.action_total_time) {
+        console.log('time up');
+        return true;
+      }
+      return false;
+    }, 'tut_scroll', 0.5, 10);
 
     makeTutorialAction(tutorial, 4, 11, () => {
       const values = tutorial.data.values;
@@ -1839,7 +1850,7 @@ class Level2 extends Level {
     ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
     ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
     ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46'] 
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
   ];
 
   constructor() {
@@ -1859,7 +1870,6 @@ class Level2 extends Level {
 }
 
 class LevelIntro3 extends LevelIntro {
-
   constructor() {
     super({ key: 'LevelIntro3' });
   }
@@ -1895,29 +1905,29 @@ class LevelIntro3 extends LevelIntro {
   }
 }
 
-class Level3 extends Level { 
+class Level3 extends Level {
 
   worldArray = [
-    ['w', 'w', 'w', 'w', ],
-    ['w', 'c', 's', 'w', ],
-    ['w', 's', 'c', 'w', ],
-    ['w', 'c', 's', 'w', ],
-    ['w', 's', 'c', 'w', ],
-    ['w', 'c', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 'a', 'a', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', 's', 's', 'w', ],
-    ['w', '2', '1', 'w', ],
-    ['w', 'w', 'w', 'w', ],
+    ['w', 'w', 'w', 'w',],
+    ['w', 'c', 's', 'w',],
+    ['w', 's', 'c', 'w',],
+    ['w', 'c', 's', 'w',],
+    ['w', 's', 'c', 'w',],
+    ['w', 'c', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 'a', 'a', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', 's', 's', 'w',],
+    ['w', '2', '1', 'w',],
+    ['w', 'w', 'w', 'w',],
   ];
 
   bgWorldArray = [
@@ -1960,7 +1970,6 @@ class Level3 extends Level {
 }
 
 class LevelIntro4 extends LevelIntro {
-
   constructor() {
     super({ key: 'LevelIntro4' });
   }
@@ -1996,7 +2005,7 @@ class LevelIntro4 extends LevelIntro {
   }
 }
 
-class Level4 extends Level { 
+class Level4 extends Level {
 
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
@@ -2025,7 +2034,7 @@ class Level4 extends Level {
     ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
     ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
     ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46'] 
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
   ];
 
   constructor() {
@@ -2045,7 +2054,6 @@ class Level4 extends Level {
 }
 
 class LevelIntro5 extends LevelIntro {
-
   constructor() {
     super({ key: 'LevelIntro5' });
   }
@@ -2079,13 +2087,11 @@ class LevelIntro5 extends LevelIntro {
       this.scene.start('Level5');
     }, 4000);
   }
-
 }
 
 class Level5 extends Level { }
 
 class LevelIntro6 extends LevelIntro {
-
   constructor() {
     super({ key: 'LevelIntro6' });
   }
@@ -2124,7 +2130,6 @@ class LevelIntro6 extends LevelIntro {
 class Level6 extends Level { }
 
 class LevelIntro7 extends LevelIntro {
-
   constructor() {
     super({ key: 'LevelIntro7' });
   }
@@ -2163,7 +2168,6 @@ class LevelIntro7 extends LevelIntro {
 class Level7 extends Level { }
 
 class LevelIntro8 extends LevelIntro {
-
   constructor() {
     super({ key: 'LevelIntro8' });
   }
@@ -2202,7 +2206,6 @@ class LevelIntro8 extends LevelIntro {
 class Level8 extends Level { }
 
 class LevelIntro9 extends LevelIntro {
-
   constructor() {
     super({ key: 'LevelIntro9' });
   }
@@ -2342,7 +2345,7 @@ const config = {
     update
   }
   */
-  //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
+  // scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
   scene: [LevelIntro3, Level3]
 };
 
