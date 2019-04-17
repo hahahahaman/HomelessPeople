@@ -691,34 +691,6 @@ function handleScrolling(_this, camera, dt) {
 // Scenes
 // --------------------------------------
 
-class SceneA extends Phaser.Scene {
-  constructor() {
-    super({ key: 'sceneA' });
-  }
-
-  preload() {}
-
-  create() {
-    this.cameras.main.fadeFrom(
-      2000,
-      Phaser.Math.Between(50, 255),
-      Phaser.Math.Between(50, 255),
-      Phaser.Math.Between(50, 255)
-    );
-
-    this.input.manager.enabled = true;
-
-    this.input.keyboard.on(
-      'keydown-R',
-      function () {
-        console.log('restart');
-        this.scene.restart();
-      },
-      this
-    );
-  }
-}
-
 class LevelIntro extends Phaser.Scene {
   // text, timer, sound clip
   // after a set period of time the intro goes to the level
