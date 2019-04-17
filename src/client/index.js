@@ -249,7 +249,11 @@ function setEntity(
   objWorld[y][x].add(entity);
 }
 
-function setEntityTutorial(scene, entity, { type = TYPE.TUTORIAL, x = 0, y = 0 } = {}) {
+function setEntityTutorial(
+  scene,
+  entity,
+  { type = TYPE.TUTORIAL, x = 0, y = 0 } = {}
+) {
   setEntity(scene, entity, {
     type,
     x,
@@ -291,7 +295,15 @@ function setEntitySpike(
   });
 }
 
-function makeTutorialAction(entity, x, y, nextActionTrigger = () => {}, image = '', scale = 1, done = 0) {
+function makeTutorialAction(
+  entity,
+  x,
+  y,
+  nextActionTrigger = () => {},
+  image = '',
+  scale = 1,
+  done = 0
+) {
   const values = entity.data.values;
   values.actionsDeque.push({
     scale,
@@ -661,7 +673,8 @@ function makeGridWorld(
           // `bg_${bgWorldArray[j][i]}`
         )
         .setOrigin(0.5)
-        .setScale(3.3);
+        .setScale(3.3)
+        .setDepth(-4);
       // .setInteractive();
 
       world[i][j] = tile;
@@ -750,7 +763,7 @@ class LevelIntro1 extends LevelIntro {
       .text(
         0,
         0,
-        'Homeless People\n\nDiscretely Getting Money\n\nto Invest in Bitconnect.',
+        'Homeless People\n\nDiscretely Getting Money\n\nto Invest in BitConnect.',
         {
           font: '20px Courier',
           fill: '#ffffff',
@@ -912,7 +925,7 @@ class Level extends Phaser.Scene {
       this.sound.add('explosion3', { volume }),
       this.sound.add('explosion4', { volume }),
       this.sound.add('explosion5', { volume }),
-      this.sound.add('explosion6', { volume }),
+      this.sound.add('explosion6', { volume })
     ];
 
     /*
@@ -1226,7 +1239,6 @@ class Level extends Phaser.Scene {
       worldHeight * tileSize + offset * 2
     );
 
-
     player = this.add.sprite(0, 0, 'homeless_guy');
     player2 = this.add.sprite(0, 0, 'homeless_guy');
 
@@ -1240,7 +1252,7 @@ class Level extends Phaser.Scene {
         idle: () => {
           entity.anims.play('idle', true);
         }
-      }); // initialize data values
+      }); // initialize data values for players
     });
 
     player.data.set('color', 0x00aaaa);
@@ -1308,6 +1320,7 @@ class Level extends Phaser.Scene {
           setEntitySpike(this, spike, {
             x,
             y,
+            depth: -1,
             idle: () => {
               spike.setTexture('spike_1');
               spike.data.set('action_elapsed_time', 0);
@@ -1327,14 +1340,14 @@ class Level extends Phaser.Scene {
           setEntity(this, trash, {
             x,
             y,
+            depth: 1,
             type: TYPE.TRASH,
-            color: 0x000000,
+            color: 0x000000
           });
           entities.add(trash);
         }
       }
       // console.log(objWorld);
-
 
       selectedEntity = player;
 
@@ -1365,7 +1378,7 @@ class Level extends Phaser.Scene {
 
       clockText = this.add
         .text(0, 0, '', {
-          font: '20px Courier',
+          font: '35px Courier',
           fill: '#ffffff'
         })
         .setScrollFactor(0);
@@ -1388,7 +1401,6 @@ class Level extends Phaser.Scene {
       this.scene.restart();
       return;
     }
-
 
     const dt = delta / 1000;
     const camera = this.cameras.main;
@@ -1607,7 +1619,9 @@ class Level extends Phaser.Scene {
                 .setDepth(10);
 
               // play explosion sound
-              this.explosionSounds[Phaser.Math.Between(0, this.explosionSounds.length - 1)].play();
+              this.explosionSounds[
+                Phaser.Math.Between(0, this.explosionSounds.length - 1)
+              ].play();
             } else if (values.state === STATE.MOVE) {
               entity.anims.play('walk_right', true);
 
@@ -1657,7 +1671,9 @@ class Level extends Phaser.Scene {
           objWorld[values.y][values.x].forEach((obj) => {
             if (obj.data.values.type === TYPE.COIN) {
               disableEntity(obj);
-              this.coinSounds[Phaser.Math.Between(0, this.coinSounds.length - 1)].play();
+              this.coinSounds[
+                Phaser.Math.Between(0, this.coinSounds.length - 1)
+              ].play();
             }
           });
         }
@@ -1665,8 +1681,18 @@ class Level extends Phaser.Scene {
 
       clockText.setText(`Time: ${levelTime.toFixed(1)}`);
       clockText.setPosition(
-        this.cameras.main.width - clockText.displayWidth,
+        this.cameras.main.width / 2.0 - clockText.displayWidth / 2.0,
         0
+      );
+      clockText.setDepth(100);
+      
+      // draw rect around
+      graphics.lineStyle(2, 0xffffff, 0.9);
+      graphics.strokeRect(
+        this.cameras.main.scrollX + this.cameras.main.width / 2.0 - clockText.displayWidth / 2.0,
+        this.cameras.main.scrollY,
+        clockText.displayWidth,
+        clockText.displayHeight
       );
     } else {
       // paused, do something
@@ -1735,64 +1761,104 @@ class Level1 extends Level {
     setEntityTutorial(this, tutorial, { depth: 0, x: 4, y: 2 });
 
     // Setups for triggers for tutorial actions
-    makeTutorialAction(tutorial, 4, 11, () => {
-      const values = tutorial.data.values;
-      if (values.action_elapsed_time > values.action_total_time) {
-        console.log('time up');
-        return true;
-      }
-      if (selectedEntity.data.values.state === STATE.MOVE) {
-        return true;
-      }
-      return false;
-    }, 'tut_clicktoselect', 0.5, 10);
+    makeTutorialAction(
+      tutorial,
+      4,
+      11,
+      () => {
+        const values = tutorial.data.values;
+        if (values.action_elapsed_time > values.action_total_time) {
+          console.log('time up');
+          return true;
+        }
+        if (selectedEntity.data.values.state === STATE.MOVE) {
+          return true;
+        }
+        return false;
+      },
+      'tut_clicktoselect',
+      0.5,
+      10
+    );
 
-    makeTutorialAction(tutorial, 4, 11, () => {
-      const values = tutorial.data.values;
-      if (values.action_elapsed_time > values.action_total_time) {
-        console.log('time up');
-        return true;
-      }
-      return false;
-    }, 'tut_scroll', 0.5, 10);
+    makeTutorialAction(
+      tutorial,
+      4,
+      11,
+      () => {
+        const values = tutorial.data.values;
+        if (values.action_elapsed_time > values.action_total_time) {
+          console.log('time up');
+          return true;
+        }
+        return false;
+      },
+      'tut_scroll',
+      0.5,
+      10
+    );
 
-    makeTutorialAction(tutorial, 4, 11, () => {
-      const values = tutorial.data.values;
-      if (values.action_elapsed_time > values.action_total_time) {
-        console.log('time up');
-        return true;
-      }
-      return false;
-    }, 'tut_wasd', 0.5, 15);
+    makeTutorialAction(
+      tutorial,
+      4,
+      11,
+      () => {
+        const values = tutorial.data.values;
+        if (values.action_elapsed_time > values.action_total_time) {
+          console.log('time up');
+          return true;
+        }
+        return false;
+      },
+      'tut_wasd',
+      0.5,
+      15
+    );
 
     objWorld[12][4].forEach((entity) => {
       if (entity.data.values.type === TYPE.TRASH) {
         this.trashToExplode = entity;
       }
     });
-    makeTutorialAction(tutorial, 4, 11, () => {
-      if (this.trashToExplode.data.values.state === STATE.EXPLODE) {
-        return true;
-      }
-      return false;
-    }, 'tut_clicktopush', 0.5, 25);
-
-    makeTutorialAction(tutorial, 4, 11, () => {
-      const values = tutorial.data.values;
-      if (values.action_elapsed_time > values.action_total_time) {
-        console.log('time up');
-        return true;
-      }
-
-      let trueFlag = false;
-      entities.forEach((entity) => {
-        const v = entity.data.values;
-        if (v.type === TYPE.PLAYER && v.y <= 8) {
-          trueFlag = true;
+    makeTutorialAction(
+      tutorial,
+      4,
+      11,
+      () => {
+        if (this.trashToExplode.data.values.state === STATE.EXPLODE) {
+          return true;
         }
-      });
-      return trueFlag;
-    }, 'tut_tips', 0.5, 25);
+        return false;
+      },
+      'tut_clicktopush',
+      0.5,
+      25
+    );
+
+    makeTutorialAction(
+      tutorial,
+      4,
+      11,
+      () => {
+        const values = tutorial.data.values;
+        if (values.action_elapsed_time > values.action_total_time) {
+          console.log('time up');
+          return true;
+        }
+
+        let trueFlag = false;
+        entities.forEach((entity) => {
+          const v = entity.data.values;
+          if (v.type === TYPE.PLAYER && v.y <= 8) {
+            trueFlag = true;
+          }
+        });
+        return trueFlag;
+      },
+      'tut_tips',
+      0.5,
+      25
+    );
 
     makeTutorialAction(tutorial, 4, 2, () => {}, 'tut_escapepoverty', 0.5);
   }
@@ -1840,17 +1906,169 @@ class LevelIntro2 extends LevelIntro {
 
 class Level2 extends Level {
   worldArray = [
-    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', '1', 'w', 'a', 'a', 's', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', '2', 'a', 'a', 'w', 's', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    [
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      '1',
+      'w',
+      'a',
+      'a',
+      's',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'w'
+    ],
+    [
+      'w',
+      '2',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      's',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w'
+    ]
   ];
 
   bgWorldArray = [
-    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+    [
+      '8',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '9'
+    ],
+    [
+      '11',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '48'
+    ],
+    [
+      '45',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '46'
+    ]
   ];
 
   constructor() {
@@ -1906,28 +2124,27 @@ class LevelIntro3 extends LevelIntro {
 }
 
 class Level3 extends Level {
-
   worldArray = [
-    ['w', 'w', 'w', 'w',],
-    ['w', 'c', 's', 'w',],
-    ['w', 's', 'c', 'w',],
-    ['w', 'c', 's', 'w',],
-    ['w', 's', 'c', 'w',],
-    ['w', 'c', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 'a', 'a', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', '2', '1', 'w',],
-    ['w', 'w', 'w', 'w',],
+    ['w', 'w', 'w', 'w'],
+    ['w', 'c', 's', 'w'],
+    ['w', 's', 'c', 'w'],
+    ['w', 'c', 's', 'w'],
+    ['w', 's', 'c', 'w'],
+    ['w', 'c', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 'a', 'a', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', '2', '1', 'w'],
+    ['w', 'w', 'w', 'w']
   ];
 
   bgWorldArray = [
@@ -1975,7 +2192,7 @@ class LevelIntro4 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+    this.load.audio('whats_up', ['assets/audio/whats_up_bitconnect.ogg']);
   }
 
   create() {
@@ -1983,7 +2200,7 @@ class LevelIntro4 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'We are coming.', {
+      .text(0, 0, 'Got BitConnect?', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -1996,7 +2213,7 @@ class LevelIntro4 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('coming');
+    const music = this.sound.add('whats_up', { volume: 0.2 });
     music.play();
 
     setTimeout(() => {
@@ -2006,35 +2223,490 @@ class LevelIntro4 extends LevelIntro {
 }
 
 class Level4 extends Level {
-
   worldArray = [
-    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', '1', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 's', 's', 'a', 'w', 'a', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'a', 's', 'c', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 'a', 's', 'a', 'w', 'a', 'c', 'c', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'a', 's', 'w', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'a', 'w'],
-    ['w', 'a', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 'a', 's', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'a', 's', 'a', 't', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', '2', 'w'],
-    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    [
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      '1',
+      's',
+      'a',
+      't',
+      'a',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'w'
+    ],
+    [
+      'w',
+      's',
+      's',
+      'a',
+      'w',
+      'a',
+      'c',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      's',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'c',
+      't',
+      'a',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'a',
+      'w',
+      'a',
+      'c',
+      'c',
+      't',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      's',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'w',
+      't',
+      'a',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      's',
+      'a',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'a',
+      't',
+      'a',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'a',
+      'a',
+      'a',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      's',
+      'c',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'a',
+      'w',
+      'a',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      's',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'a',
+      'w',
+      'a',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      's',
+      'w',
+      'w'
+    ],
+    [
+      'w',
+      'a',
+      's',
+      'a',
+      't',
+      'a',
+      'a',
+      'a',
+      't',
+      'a',
+      'a',
+      'w',
+      'a',
+      'a',
+      't',
+      's',
+      '2',
+      'w'
+    ],
+    [
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w',
+      'w'
+    ]
   ];
 
   bgWorldArray = [
-    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+    [
+      '8',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '10',
+      '9'
+    ],
+    [
+      '11',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '14',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '48'
+    ],
+    [
+      '11',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '51',
+      '14',
+      '14',
+      '51',
+      '51',
+      '51',
+      '48'
+    ],
+    [
+      '45',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '47',
+      '46'
+    ]
   ];
 
   constructor() {
@@ -2089,7 +2761,7 @@ class LevelIntro5 extends LevelIntro {
   }
 }
 
-class Level5 extends Level { }
+class Level5 extends Level {}
 
 class LevelIntro6 extends LevelIntro {
   constructor() {
@@ -2127,7 +2799,7 @@ class LevelIntro6 extends LevelIntro {
   }
 }
 
-class Level6 extends Level { }
+class Level6 extends Level {}
 
 class LevelIntro7 extends LevelIntro {
   constructor() {
@@ -2165,7 +2837,7 @@ class LevelIntro7 extends LevelIntro {
   }
 }
 
-class Level7 extends Level { }
+class Level7 extends Level {}
 
 class LevelIntro8 extends LevelIntro {
   constructor() {
@@ -2203,7 +2875,7 @@ class LevelIntro8 extends LevelIntro {
   }
 }
 
-class Level8 extends Level { }
+class Level8 extends Level {}
 
 class LevelIntro9 extends LevelIntro {
   constructor() {
@@ -2241,7 +2913,7 @@ class LevelIntro9 extends LevelIntro {
   }
 }
 
-class Level9 extends Level { }
+class Level9 extends Level {}
 
 class LevelIntro10 extends LevelIntro {
   constructor() {
@@ -2279,7 +2951,7 @@ class LevelIntro10 extends LevelIntro {
   }
 }
 
-class Level10 extends Level { }
+class Level10 extends Level {}
 
 class LevelIntroEnd extends LevelIntro {
   constructor() {
@@ -2316,7 +2988,7 @@ class LevelIntroEnd extends LevelIntro {
     }, 5000);
   }
 
-  update(time, delta) { }
+  update(time, delta) {}
 }
 
 // --------------------------------------
@@ -2346,7 +3018,7 @@ const config = {
   }
   */
   // scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
-  scene: [LevelIntro3, Level3]
+  scene: [LevelIntro4, Level4]
 };
 
 const game = new Phaser.Game(config); // main process
