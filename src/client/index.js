@@ -109,6 +109,7 @@ let eKeyObj;
 let worldHeight;
 let worldWidth;
 
+let coins;
 let win = false;
 let gameOver = false;
 let entities;
@@ -128,6 +129,10 @@ function enableEntities() {
 }
 
 function disableEntity(entity) {
+  if (entity.data.values.type === TYPE.COIN) {
+    coins--;
+  }
+
   predisableEntity(entity);
   if (entities.has(entity)) {
     entities.delete(entity);
@@ -743,6 +748,8 @@ class Level extends Phaser.Scene {
     ['45', '47', '47', '47', '47', '47', '47', '46']
   ];
 
+  nextSceneKey;
+
   constructor() {
     super({ key: 'Level' });
   }
@@ -798,6 +805,7 @@ class Level extends Phaser.Scene {
 
     levelTime = 0.0;
 
+    coins = 0;
     win = false;
     gameOver = false;
 
@@ -888,18 +896,6 @@ class Level extends Phaser.Scene {
         console.log('restart');
         this.scene.restart();
       });
-
-    this.input.manager.enabled = true;
-
-    this.input.keyboard.on(
-      'keydown-R',
-      function () {
-        console.log('restart');
-        console.log(this.scene);
-        this.scene.restart();
-      },
-      this
-    );
 
     eKeyObj = this.input.keyboard.addKey('E');
 
@@ -1201,6 +1197,7 @@ class Level extends Phaser.Scene {
             y
           });
           entities.add(coin);
+          coins++;
         }
         if (this.worldArray[y][x] === 's') {
           const spike = this.add.sprite(0, 0, 'spike_1').setScale(2.5);
@@ -1271,6 +1268,17 @@ class Level extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (gameOver) {
+      this.scene.restart();
+      return;
+    }
+
+    if(coins === 0){
+      if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
+      else this.scene.restart();
+      return;
+    }
+
     const dt = delta / 1000;
     const camera = this.cameras.main;
 
@@ -1512,6 +1520,15 @@ class Level extends Phaser.Scene {
         } else {
           values.state = STATE.IDLE;
           values.idle();
+        }
+
+        // coin collection
+        if (values.type === TYPE.PLAYER) {
+          objWorld[values.y][values.x].forEach((obj) => {
+            if (obj.data.values.type === TYPE.COIN) {
+              disableEntity(obj);
+            }
+          });
         }
       });
 
