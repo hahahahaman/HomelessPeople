@@ -794,6 +794,8 @@ class Level extends Phaser.Scene {
 
   coinSounds;
 
+  explosionSounds;
+
   preload() {
     this.load.setBaseURL('../..');
     this.load.image('bg', 'assets/wallpaper.jpg');
@@ -836,6 +838,13 @@ class Level extends Phaser.Scene {
 
     this.load.audio('bitconnect1', ['assets/audio/bitconnect1.ogg']);
     this.load.audio('bitconnect2', ['assets/audio/bitconnect2.ogg']);
+
+    this.load.audio('explosion1', ['assets/audio/explosion1.mp3']);
+    this.load.audio('explosion2', ['assets/audio/explosion2.mp3']);
+    this.load.audio('explosion3', ['assets/audio/explosion3.mp3']);
+    this.load.audio('explosion4', ['assets/audio/explosion4.mp3']);
+    this.load.audio('explosion5', ['assets/audio/explosion5.mp3']);
+    this.load.audio('explosion6', ['assets/audio/explosion6.mp3']);
   }
 
   create() {
@@ -860,6 +869,15 @@ class Level extends Phaser.Scene {
     this.coinSounds = [
       this.sound.add('bitconnect1'),
       this.sound.add('bitconnect2')
+    ];
+
+    this.explosionSounds = [
+      this.sound.add('explosion1'),
+      this.sound.add('explosion2'),
+      this.sound.add('explosion3'),
+      this.sound.add('explosion4'),
+      this.sound.add('explosion5'),
+      this.sound.add('explosion6'),
     ];
 
     /*
@@ -1549,6 +1567,9 @@ class Level extends Phaser.Scene {
                 .setScale(0.8)
                 .setOrigin(0.5, 0.8)
                 .setDepth(10);
+
+              // play explosion sound
+              this.explosionSounds[Phaser.Math.Between(0, this.explosionSounds.length - 1)].play();
             } else if (values.state === STATE.MOVE) {
               entity.anims.play('walk_right', true);
 
@@ -1669,7 +1690,7 @@ class Level2 extends Level {
     ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
     ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
     ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46'] 
   ];
 
   constructor() {
@@ -1688,37 +1709,363 @@ class Level2 extends Level {
   }
 }
 
-class LevelIntro3 extends LevelIntro {}
+class LevelIntro3 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro3' });
+  }
 
-class Level3 extends Level {}
+  preload() {
+    this.load.audio('whats_up', ['assets/audio/whats_up_bitconnect.ogg']);
+  }
 
-class LevelIntro4 extends LevelIntro {}
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
 
-class Level4 extends Level {}
+    this.title = this.add
+      .text(0, 0, 'You have my attention.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
 
-class LevelIntro5 extends LevelIntro {}
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
 
-class Level5 extends Level {}
+    const music = this.sound.add('whats_up');
+    music.play();
 
-class LevelIntro6 extends LevelIntro {}
+    setTimeout(() => {
+      this.scene.start('Level3');
+    }, 4000);
+  }
+}
 
-class Level6 extends Level {}
+class Level3 extends Level { 
 
-class LevelIntro7 extends LevelIntro {}
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', '1', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 's', 's', 'a', 'w', 'a', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
+    ['w', 'a', 's', 'c', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 'a', 's', 'a', 'w', 'a', 'c', 'c', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
+    ['w', 'a', 's', 'w', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'a', 'w'],
+    ['w', 'a', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 'a', 's', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
+    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
+    ['w', 'a', 's', 'a', 't', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', '2', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
 
-class Level7 extends Level {}
+  bgWorldArray = [
+    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46'] 
+  ];
 
-class LevelIntro8 extends LevelIntro {}
+  constructor() {
+    super({ key: 'Level3' });
+    this.nextSceneKey = 'LevelIntro4';
+  }
 
-class Level8 extends Level {}
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
 
-class LevelIntro9 extends LevelIntro {}
+}
 
-class Level9 extends Level {}
+class LevelIntro4 extends LevelIntro {
 
-class LevelIntro10 extends LevelIntro {}
+  constructor() {
+    super({ key: 'LevelIntro4' });
+  }
 
-class Level10 extends Level {}
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level4');
+    }, 4000);
+  }
+}
+
+class Level4 extends Level { }
+
+class LevelIntro5 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntro5' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level5');
+    }, 4000);
+  }
+
+}
+
+class Level5 extends Level { }
+
+class LevelIntro6 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntro6' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level6');
+    }, 4000);
+  }
+}
+
+class Level6 extends Level { }
+
+class LevelIntro7 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntro7' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level7');
+    }, 4000);
+  }
+}
+
+class Level7 extends Level { }
+
+class LevelIntro8 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntro8' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level8');
+    }, 4000);
+  }
+}
+
+class Level8 extends Level { }
+
+class LevelIntro9 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntro9' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level9');
+    }, 4000);
+  }
+}
+
+class Level9 extends Level { }
+
+class LevelIntro10 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro10' });
+  }
+
+  preload() {
+    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'We are coming.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('coming');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level10');
+    }, 4000);
+  }
+}
+
+class Level10 extends Level { }
 
 class LevelIntroEnd extends LevelIntro {
   constructor() {
@@ -1755,7 +2102,7 @@ class LevelIntroEnd extends LevelIntro {
     }, 5000);
   }
 
-  update(time, delta) {}
+  update(time, delta) { }
 }
 
 // --------------------------------------
@@ -1784,7 +2131,8 @@ const config = {
     update
   }
   */
-  scene: [LevelIntro1, Level1, LevelIntro2, Level2]
+  scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
+  //scene: [LevelIntro3, Level3]
 };
 
 const game = new Phaser.Game(config); // main process
