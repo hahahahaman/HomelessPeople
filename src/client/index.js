@@ -1923,6 +1923,37 @@ class Level extends Phaser.Scene {
   }
 }
 
+class LevelLogo extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelLogo' });
+  }
+
+  preload() {
+    this.load.audio('heyheyhey', ['assets/audio/heyheyhey.ogg']);
+    this.load.image('shadybasement', 'assets/shadybasement.png');
+  }
+
+  create() {
+    this.cameras.main.setBackgroundColor('#141414');
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    
+    this.logo = this.add.sprite(width / 2.0, height / 2.0, 'shadybasement').setScale(0.27);
+
+    // this.logo.setPosition(
+    //   width / 2.0 - this.logo.displayWidth / 2.0,
+    //   height / 2.0 - this.logo.displayHeight / 2.0
+    // );
+
+    const music = this.sound.add('heyheyhey');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('LevelIntro1');
+    }, 5000);
+  }
+}
+
 class LevelIntro1 extends LevelIntro {
   constructor() {
     super({ key: 'LevelIntro1' });
@@ -2835,7 +2866,7 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
+  scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
   //scene: [LevelIntro6]
 };
 
