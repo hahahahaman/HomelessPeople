@@ -1776,7 +1776,7 @@ class Level extends Phaser.Scene {
                 entity.anims.play('spike_prep', false);
                 // console.log('prep');
               } else if (nextAction.state === STATE.SPIKE_DOWN) {
-                entity.setTexture('spike_4');
+                entity.anims.play('spike_down', false);
                 // console.log('down');
               } else if (nextAction.state === STATE.SPIKE_UP) {
                 entity.setTexture('spike_4');
@@ -2835,8 +2835,8 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
-  scene: [LevelIntro6]
+  scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
+  //scene: [LevelIntro6]
 };
 
 const game = new Phaser.Game(config); // main process
