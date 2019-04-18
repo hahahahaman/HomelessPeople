@@ -848,6 +848,11 @@ class Level extends Phaser.Scene {
       spacing: 1
     });
 
+    this.load.spritesheet('dungeon', 'assets/assets_dungeon.png', {
+      frameWidth: 32,
+      frameHeight: 32,
+    });
+
     for (let i = 1; i <= 64; ++i) {
       this.load.image(
         `bg_${`0${i}`.slice(-2)}`,
@@ -1287,7 +1292,7 @@ class Level extends Phaser.Scene {
         }
         if (this.worldArray[y][x] === 'w') {
           const rock = this.add
-            .sprite(0, 0, `rock_${Phaser.Math.Between(1, 3)}`)
+            .sprite(0, 0, 'dungeon', '6')
             .setScale(1.5);
           setEntityRock(this, rock, { x, y });
         }
@@ -1919,28 +1924,27 @@ class LevelIntro3 extends LevelIntro {
 }
 
 class Level3 extends Level {
-
   worldArray = [
-    ['w', 'w', 'w', 'w',],
-    ['w', 'c', 's', 'w',],
-    ['w', 's', 'c', 'w',],
-    ['w', 'c', 's', 'w',],
-    ['w', 's', 'c', 'w',],
-    ['w', 'c', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 'a', 'a', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', 's', 's', 'w',],
-    ['w', '2', '1', 'w',],
-    ['w', 'w', 'w', 'w',],
+    ['w', 'w', 'w', 'w', ],
+    ['w', 'c', 's', 'w', ],
+    ['w', 's', 'c', 'w', ],
+    ['w', 'c', 's', 'w', ],
+    ['w', 's', 'c', 'w', ],
+    ['w', 'c', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 'a', 'a', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', 's', 's', 'w', ],
+    ['w', '2', '1', 'w', ],
+    ['w', 'w', 'w', 'w', ],
   ];
 
   bgWorldArray = [
@@ -2019,7 +2023,6 @@ class LevelIntro4 extends LevelIntro {
 }
 
 class Level4 extends Level {
-
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
     ['w', '1', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
@@ -2216,7 +2219,68 @@ class LevelIntro8 extends LevelIntro {
   }
 }
 
-class Level8 extends Level { }
+class Level8 extends Level {
+  worldArray = [
+    ['w', 'w', 'w', 'w'],
+    ['w', 'c', 's', 'w'],
+    ['w', 's', 'c', 'w'],
+    ['w', 'c', 's', 'w'],
+    ['w', 's', 'c', 'w'],
+    ['w', 'c', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 'a', 'a', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', 's', 's', 'w'],
+    ['w', '2', '1', 'w'],
+    ['w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    ['792', '832', '832', '793'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['795', '714', '714', '794'],
+    ['829', '831', '831', '830']
+  ];
+
+  constructor() {
+    super({ key: 'Level8' });
+    this.nextSceneKey = 'LevelIntro4';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+}
 
 class LevelIntro9 extends LevelIntro {
   constructor() {
@@ -2358,8 +2422,9 @@ const config = {
     update
   }
   */
-  scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
-  //scene: [LevelIntro3, Level3]
+  //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
+  scene: [LevelIntro3, Level3]
+  // scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
 };
 
 const game = new Phaser.Game(config); // main process
