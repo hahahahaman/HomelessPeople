@@ -405,24 +405,28 @@ function makeSpikeDownAction(entity) {
   });
 }
 
-function makeExplodeAction(entity, state = STATE.EXPLODE) {
+function makeExplodeAction(entity, state = STATE.EXPLODE, done = 1) {
   const values = entity.data.values;
   values.state = state;
   let rotateBack = 0;
-  if (values.cannon_x === 1) {
-    rotateBack = 90;
-  } else if (values.cannon_x === -1) {
-    rotateBack = -90;
-  } else if (values.cannon_y === -1) {
-    rotateBack = 180;
-  }
 
-  entity.angle += rotateBack;
+  if (values.type === TYPE.CANNON || values.type === TYPE.FIREBALL) {
+    if (values.cannon_x === 1) {
+      rotateBack = 90;
+    } else if (values.cannon_x === -1) {
+      rotateBack = -90;
+    } else if (values.cannon_y === -1) {
+      rotateBack = 180;
+    }
+  
+    entity.angle += rotateBack;
+  }
+  
   values.actionsDeque.clear();
   values.actionsDeque.push({
     state,
     elapsed: 0.0,
-    done: 1
+    done
   });
 }
 
@@ -879,7 +883,7 @@ class Level extends Phaser.Scene {
       frameWidth: 128,
       frameHeight: 128
     });
-    this.load.spritesheet('explosion1', 'assets/explosion-1.png', {
+    this.load.spritesheet('explosion_s', 'assets/explosion-1.png', {
       frameWidth: 32,
       frameHeight: 32
     });
@@ -1234,12 +1238,12 @@ class Level extends Phaser.Scene {
     });
 
     this.anims.create({
-      key: 'explosion1',
-      frames: this.anims.generateFrameNumbers('explosion1', {
+      key: 'explosion_s',
+      frames: this.anims.generateFrameNumbers('explosion_s', {
         start: 0,
         end: 7
       }),
-      frameRate: 10,
+      frameRate: 15,
       repeat: 0
     });
 
@@ -1674,26 +1678,38 @@ class Level extends Phaser.Scene {
             if (values.type !== TYPE.ROCK) {
               if (action.state === STATE.MOVE) {
                 if (values.type === TYPE.FIREBALL) {
+
                   let hit = false;
                   objWorld[values.y][values.x].forEach((obj) => {
                     const obj_val = obj.data.values;
                     if (obj !== entity) {
-                      if (obj_val.type === TYPE.PLAYER
-                        || obj_val.type === TYPE.TRASH
+                      if (obj_val.type === TYPE.TRASH
                         || obj_val.type === TYPE.COIN
                         || obj_val.type === TYPE.CANNON
-                        || obj_val.type === TYPE.FIREBALL) {
+                        || (obj_val.type === TYPE.FIREBALL && obj_val.state !== STATE.EXPLODE_SMALL)) {
                         disableEntity(obj);
+                        hit = true;
                         console.log(obj_val.type);
+                      } else if (obj_val.type === TYPE.ROCK) {
+                        hit = true;
+                      } else if (obj_val.type === TYPE.PLAYER) {
+                        predisableEntity(obj);
+                        makeExplodeAction(obj);
                       }
-                      hit = true;
-                      predisableEntity(entity);
-                      makeExplodeAction(entity, STATE.EXPLODE_SMALL);
+                      if (hit) {
+                        predisableEntity(entity);
+                        makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
+                        entity.setTexture('explosion_s', '0');
+                      }
                     }
                   });
-                  if (!hit && isPosInWorld(nextX, nextY)) {
-                    makeFireballAction(entity);
-                    entityMoveTo(entity, nextX, nextY);
+                  if (!hit) {
+                    if (isPosInWorld(nextX, nextY)) {
+                      makeFireballAction(entity);
+                      entityMoveTo(entity, nextX, nextY);
+                    } else {
+                      disableEntity(entity);
+                    }
                   }
                 } else {
                   let stall_action = false;
@@ -1738,8 +1754,11 @@ class Level extends Phaser.Scene {
             }
 
             const extraTime = action.elapsed - action.done;
-           
-            deque.shift();
+
+            if (values.type !== TYPE.FIREBALL || values.state !== STATE.EXPLODE_SMALL) {
+              deque.shift();
+            }
+
             if (deque.length > 0) {
               // transfer time to next action
               const nextAction = deque.peek();
@@ -1806,7 +1825,7 @@ class Level extends Phaser.Scene {
             } else if (values.state === STATE.EXPLODE_SMALL) {
               console.log('hit small explode');
               entity.anims
-                .play('explosion1', true)
+                .play('explosion_s', true)
                 .setScale(0.8)
                 .setOrigin(0.5, 0.8)
                 .setDepth(10);
@@ -1817,8 +1836,13 @@ class Level extends Phaser.Scene {
               if (action.state === STATE.SPIKE_UP) {
                 objWorld[values.y][values.x].forEach((obj) => {
                   if (obj !== entity) {
+                    const obj_val = obj.data.values;
                     predisableEntity(obj);
-                    makeExplodeAction(obj);
+                    if (obj_val.type === TYPE.FIREBALL) {
+                      makeExplodeAction(obj, STATE.EXPLODE_SMALL, 0.46);
+                    } else {
+                      makeExplodeAction(obj);
+                    }
                   }
                 });
               } else if (action.state === STATE.IDLE) {
@@ -1855,6 +1879,9 @@ class Level extends Phaser.Scene {
           // no actions in deque
           values.state = STATE.IDLE;
           values.idle();
+          if (values.type === TYPE.FIREBALL) {
+            console.log('fireball');
+          }
         }
 
         // coin collection
@@ -1939,9 +1966,9 @@ class Level1 extends Level {
 
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', 'a', 'rd1', 'a', 'c', 'a', 'a', 'ru1', 'w'],
+    ['w', 'a', 'a', 'a', 'c', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'a', 'a', 'a', 'rr5', 'a', 'rl1', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 't', 't', 'w', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'a', 'a', 'w', 'w', 'w', 'w', 'w', 'w'],
@@ -1950,7 +1977,7 @@ class Level1 extends Level {
     ['w', 'w', 'w', 't', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'rl5', 's', 't', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 's', 't', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', '1', '2', 'a', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w']
