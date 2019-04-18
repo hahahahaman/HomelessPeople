@@ -1672,46 +1672,48 @@ class Level extends Phaser.Scene {
           if (action.elapsed > action.done && values.type !== TYPE.TUTORIAL) {
             // rocks cannot be moved around
             if (values.type !== TYPE.ROCK) {
-              if (action.state === STATE.MOVE && values.type === TYPE.PLAYER) {
-                let stall_action = false;
-
-                objWorld[nextY][nextX].forEach((obj) => {
-                  if (
-                    obj !== entity
-                    && (obj.data.values.type === TYPE.PLAYER
-                      || obj.data.values.type === TYPE.TRASH)
-                  ) {
-                    stall_action = true;
-                  }
-                });
-
-                if (!isValidMovePos(entity, nextX, nextY)) stall_action = true;
-
-                if (stall_action) {
-                  return;
-                }
-
-                entityMoveTo(entity, nextX, nextY);
-              } else if (action.state === STATE.MOVE && values.type === TYPE.FIREBALL) {
-                let hit = false;
-                objWorld[values.y][values.x].forEach((obj) => {
-                  const obj_val = obj.data.values;
-                  if (obj !== entity) {
-                    if (obj_val.type === TYPE.PLAYER
-                      || obj_val.type === TYPE.TRASH
-                      || obj_val.type === TYPE.COIN
-                      || obj_val.type === TYPE.CANNON
-                      || obj_val.type === TYPE.FIREBALL) {
-                      disableEntity(obj);
-                      console.log(obj_val.type);
+              if (action.state === STATE.MOVE) {
+                if (values.type === TYPE.FIREBALL) {
+                  let hit = false;
+                  objWorld[values.y][values.x].forEach((obj) => {
+                    const obj_val = obj.data.values;
+                    if (obj !== entity) {
+                      if (obj_val.type === TYPE.PLAYER
+                        || obj_val.type === TYPE.TRASH
+                        || obj_val.type === TYPE.COIN
+                        || obj_val.type === TYPE.CANNON
+                        || obj_val.type === TYPE.FIREBALL) {
+                        disableEntity(obj);
+                        console.log(obj_val.type);
+                      }
+                      hit = true;
+                      predisableEntity(entity);
+                      makeExplodeAction(entity, STATE.EXPLODE_SMALL);
                     }
-                    hit = true;
-                    predisableEntity(entity);
-                    makeExplodeAction(entity, STATE.EXPLODE_SMALL);
+                  });
+                  if (!hit && isPosInWorld(nextX, nextY)) {
+                    makeFireballAction(entity);
+                    entityMoveTo(entity, nextX, nextY);
                   }
-                });
-                if (!hit && isPosInWorld(nextX, nextY)) {
-                  makeFireballAction(entity);
+                } else {
+                  let stall_action = false;
+
+                  objWorld[nextY][nextX].forEach((obj) => {
+                    if (
+                      obj !== entity
+                      && (obj.data.values.type === TYPE.PLAYER
+                        || obj.data.values.type === TYPE.TRASH)
+                    ) {
+                      stall_action = true;
+                    }
+                  });
+
+                  if (!isValidMovePos(entity, nextX, nextY)) stall_action = true;
+
+                  if (stall_action) {
+                    return;
+                  }
+
                   entityMoveTo(entity, nextX, nextY);
                 }
               } else if (action.state === STATE.PUSHED) {
@@ -1744,6 +1746,7 @@ class Level extends Phaser.Scene {
               
               nextAction.elapsed += extraTime;
               //console.log("here: " + values.type + nextAction.elapsed)
+
               if (nextAction.state === STATE.SPIKE_PREP) {
                 entity.anims.play('spike_prep', false);
                 // console.log('prep');
@@ -1849,6 +1852,7 @@ class Level extends Phaser.Scene {
             }
           }
         } else {
+          // no actions in deque
           values.state = STATE.IDLE;
           values.idle();
         }
