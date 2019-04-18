@@ -1226,21 +1226,6 @@ class Level extends Phaser.Scene {
     player = this.add.sprite(0, 0, 'homeless_guy');
     player2 = this.add.sprite(0, 0, 'homeless_guy');
 
-    // initialize entities
-    entities.add(player);
-    entities.add(player2);
-
-    entities.forEach((entity) => {
-      setEntity(this, entity, {
-        depth: 1,
-        idle: () => {
-          entity.anims.play('idle', true);
-        }
-      }); // initialize data values
-    });
-
-    player.data.set('color', 0x00aaaa);
-    player2.data.set('color', 0x0000ff);
 
     // initialize all selectable entities
     selectableEntities.push(player, player2);
@@ -1267,16 +1252,40 @@ class Level extends Phaser.Scene {
     for (let y = 0; y < this.worldArray.length; ++y) {
       for (let x = 0; x < this.worldArray[y].length; ++x) {
         if (this.worldArray[y][x] === '1') {
+          // initialize data values
+          setEntity(this, player, {
+            x, y, end_x: x, end_y: y, color: 0x0000ff,
+            depth: 1,
+            idle: () => {
+              player.anims.play('idle', true);
+            }
+          }); 
+
+          entities.add(player);
+          /*
           player.data.values.x = x;
           player.data.values.y = y;
           player.data.values.end_x = x;
           player.data.values.end_y = y;
+          */
         }
         if (this.worldArray[y][x] === '2') {
+          // initialize data values
+          setEntity(this, player2, {
+            x, y, end_x: x, end_y: y, color: 0x00baba,
+            depth: 1,
+            idle: () => {
+              player2.anims.play('idle', true);
+            }
+          }); 
+          
+          entities.add(player2);
+          /*
           player2.data.values.x = x;
           player2.data.values.y = y;
           player2.data.values.end_x = x;
           player2.data.values.end_y = y;
+          */
         }
         if (this.worldArray[y][x] === 'w') {
           const rock = this.add
@@ -2095,6 +2104,7 @@ class LevelIntro5 extends LevelIntro {
 
 class Level5 extends Level { 
   // level with lots of trash
+  // push trash while on spike puzzle a,t,s,1
 }
 
 class LevelIntro6 extends LevelIntro {
@@ -2408,15 +2418,8 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  /*
-  scene: {
-    preload,
-    create,
-    update
-  }
-  */
-  //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
-  scene: [LevelIntro4, Level4]
+  scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
+  //scene: [LevelIntro4, Level4]
 };
 
 const game = new Phaser.Game(config); // main process
