@@ -866,7 +866,7 @@ class Level extends Phaser.Scene {
   preload() {
     this.load.setBaseURL('../..');
     this.load.image('bg', 'assets/wallpaper.jpg');
-    this.load.image('grass', 'assets/grass.jpg');
+    //this.load.image('grass', 'assets/grass.jpg');
     this.load.spritesheet('homeless_guy', 'assets/homeless_right.png', {
       frameWidth: 50,
       frameHeight: 50
@@ -906,15 +906,15 @@ class Level extends Phaser.Scene {
       frameHeight: 32,
     });
 
-    for (let i = 1; i <= 64; ++i) {
-      this.load.image(
-        `bg_${`0${i}`.slice(-2)}`,
-        `assets/bg_tiles/generic-rpg-tile${`0${i}`.slice(-2)}.png`
-      );
-    }
-    for (let i = 1; i < 4; ++i) {
-      this.load.image(`rock_${i}`, `assets/rock${i}.png`);
-    }
+    // for (let i = 1; i <= 64; ++i) {
+    //   this.load.image(
+    //     `bg_${`0${i}`.slice(-2)}`,
+    //     `assets/bg_tiles/generic-rpg-tile${`0${i}`.slice(-2)}.png`
+    //   );
+    // }
+    // for (let i = 1; i < 4; ++i) {
+    //   this.load.image(`rock_${i}`, `assets/rock${i}.png`);
+    // }
 
     for (let i = 1; i < 5; ++i) {
       this.load.image(`spike_${i}`, `assets/spike${i}.png`);
