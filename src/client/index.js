@@ -405,7 +405,7 @@ function makeSpikeDownAction(entity) {
   });
 }
 
-function makeExplodeAction(entity, state = STATE.EXPLODE) {
+function makeExplodeAction(entity, state = STATE.EXPLODE, done = 1) {
   const values = entity.data.values;
   values.state = state;
   let rotateBack = 0;
@@ -426,7 +426,7 @@ function makeExplodeAction(entity, state = STATE.EXPLODE) {
   values.actionsDeque.push({
     state,
     elapsed: 0.0,
-    done: 1
+    done
   });
 }
 
@@ -1711,7 +1711,7 @@ class Level extends Phaser.Scene {
                     }
                     hit = true;
                     predisableEntity(entity);
-                    makeExplodeAction(entity, STATE.EXPLODE_SMALL);
+                    makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
                   }
                 });
                 if (!hit && isPosInWorld(nextX, nextY)) {
@@ -1781,7 +1781,7 @@ class Level extends Phaser.Scene {
                 fireball.angle -= rotatation;
 
                 entities.add(fireball);
-                fireball.anims.play('fireball', false).setScale(0.5);
+                fireball.anims.play('fireball', true).setScale(0.5);
                 makeFireballAction(fireball);
               }
             }
