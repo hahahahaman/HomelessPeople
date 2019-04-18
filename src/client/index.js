@@ -801,6 +801,19 @@ function handleScrolling(_this, camera, dt) {
   }
 }
 
+function restart(_this) {
+  console.log('restarting level');
+  paused = true;
+  _this.scene.restart();
+
+  /*
+  entities = [];
+  drawFuncs = [];
+
+  selectableEntities = [];
+  */
+}
+
 // --------------------------------------
 // Scenes
 // --------------------------------------
@@ -952,6 +965,7 @@ class Level extends Phaser.Scene {
     //  regardless of their place on the display list
     this.input.setTopOnly(true);
 
+    paused = false;
     levelTime = 0.0;
 
     coins = 0;
@@ -1057,8 +1071,7 @@ class Level extends Phaser.Scene {
         }
       })
       .on('keydown-R', () => {
-        console.log('restart');
-        this.scene.restart();
+        restart(this);
       });
 
     eKeyObj = this.input.keyboard.addKey('E');
@@ -1528,13 +1541,13 @@ class Level extends Phaser.Scene {
 
         setTimeout(() => {
           if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
-          else this.scene.restart();
+          else restart(this)
         }, 6000);
       }
     }
 
     if (gameOver && !win) {
-      this.scene.restart();
+      restart(this);
       return;
     }
 
@@ -1653,6 +1666,12 @@ class Level extends Phaser.Scene {
 
       // handle all Entities
       entities.forEach((entity) => {
+        if(!entity.data){
+          console.log(`Dataless entity:`);
+          console.log(entity)
+          console.log(`Entities:`);
+          console.log(entities);
+        } 
         const values = entity.data.values;
         const deque = values.actionsDeque;
 
@@ -2380,20 +2399,20 @@ class LevelIntro5 extends LevelIntro {
 class Level5 extends Level {
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', '1', 'a', 'a', 'a', 'rd1', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', '2', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'a', 'rd3', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'rd4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', '1', 'a', 'a', 'a', 'rd4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', '2', 'a', 'a', 'rd3', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'rd1', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
     ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
     ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
-    ['w', 'c', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 'c', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 'c', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 'c', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 'c', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 'c', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
+    ['w', 'c', 't', 't', 't', 't', 't', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 't', 't', 't', 't', 't', 'a', 'a', 'a', 'a', 'a', 'c', 'a', 'c', 'a', 'c', 'w'],
+    ['w', 'c', 't', 't', 't', 't', 't', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'a', 'c', 'a', 'w'],
+    ['w', 'a', 't', 't', 't', 't', 't', 'a', 'a', 'a', 'a', 'a', 'c', 'a', 'c', 'a', 'c', 'w'],
+    ['w', 'c', 't', 't', 't', 't', 't', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'a', 'c', 'a', 'w'],
+    ['w', 'a', 't', 't', 't', 't', 't', 'a', 'a', 'a', 'a', 'a', 'c', 'a', 'c', 'a', 'c', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -2470,27 +2489,15 @@ class LevelIntro6 extends LevelIntro {
 }
 
 class Level6 extends Level {
-
+  // dodge spikes and fireballs easy
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', '1', 'a', 'a', 'a', 'rd1', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', '2', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'a', 'rd3', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'rd4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
-    ['w', 't', 't', 't', 't', 't', 't', 't', 't', 't', 't', 'c', 'c', 'c', 'c', 'c', 'c', 'w'],
+    ['w', 'c', 'a', 'a', 's', 'a', 'w', 'a', 'a', 'rd1', 'w', 'a', 'rd2', 'w', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 's', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 's', 'w', 'a', 'w', 'c', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'w', 'w', 's', 'w', 's', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', '1', 'a', 's', 'w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', '2', 'a', 'w', 'w', 'c', 'a', 'a', 'ru1', 'w', 'a', 'a', 'a', 'ru2', 'w', 'ru4', 'w', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -2502,18 +2509,6 @@ class Level6 extends Level {
     ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
     ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
     ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
-    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
     ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
   ];
 
@@ -2685,7 +2680,7 @@ class LevelIntro9 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'Believe.', {
+      .text(0, 0, 'Believe In Your Timing.', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -2784,7 +2779,8 @@ class LevelIntroEnd extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('outro', ['assets/audio/whatafuckingloser.ogg']);
+    this.load.audio('loser', ['assets/audio/whatafuckingloser.ogg']);
+    this.load.audio('outro', ['assets/audio/disneybitconnect.ogg']);
   }
 
   create() {
@@ -2805,8 +2801,12 @@ class LevelIntroEnd extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('outro');
+    const music = this.sound.add('loser', { volume: 0.8 });
+    const outro = this.sound.add('outro', { volume });
     music.play();
+    music.on('complete', () => { 
+      outro.play();
+    });
 
     setTimeout(() => {
       this.scene.start('LevelIntro1');
@@ -2836,7 +2836,7 @@ const config = {
     }
   },
   //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
-  scene: [LevelIntro6]
+  scene: [Level1, LevelIntro2, Level2]
 };
 
 const game = new Phaser.Game(config); // main process
