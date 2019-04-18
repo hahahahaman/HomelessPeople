@@ -257,7 +257,8 @@ function setEntitySpike(
   scene,
   entity,
   {
-    type = TYPE.SPIKE, color = 0xff0000, x = 0, y = 0, idle = () => {}
+    type = TYPE.SPIKE, color = 0xff0000, x = 0, y = 0, idle = () => { },
+    depth = -2
   } = {}
 ) {
   setEntity(scene, entity, {
@@ -265,6 +266,7 @@ function setEntitySpike(
     x,
     y,
     color,
+    depth,
     /*
     timeLeftText: null,
     doneText: null,
@@ -376,17 +378,22 @@ function isPosInWorld(worldX, worldY) {
   return true;
 }
 
-function isValidMovePos(worldX, worldY) {
+function isValidMovePos(entity, worldX, worldY) {
   if (!isPosInWorld(worldX, worldY)) return false;
 
   let valid = true;
   objWorld[worldY][worldX].forEach((obj) => {
-    if (
-      obj.data.values.type === TYPE.ROCK
-      || obj.data.values.type === TYPE.PLAYER
-      || obj.data.values.type === TYPE.TRASH
-    ) {
-      valid = false;
+    if (entity.data.values.type === TYPE.COIN) {
+      if (obj.data.values.type === TYPE.ROCK) valid = false;
+    } else {
+      if (
+        obj.data.values.type === TYPE.ROCK
+        || obj.data.values.type === TYPE.PLAYER
+        || obj.data.values.type === TYPE.TRASH
+      ) {
+        valid = false;
+      }
+
     }
   });
   return valid;
@@ -1283,7 +1290,8 @@ class Level extends Phaser.Scene {
           setEntity(this, coin, {
             type: TYPE.COIN,
             x,
-            y
+            y,
+            depth: 2
           });
           entities.add(coin);
           coins++;
@@ -1295,7 +1303,6 @@ class Level extends Phaser.Scene {
           setEntitySpike(this, spike, {
             x,
             y,
-            depth: -1,
             idle: () => {
               spike.setTexture('spike_1');
               spike.data.set('action_elapsed_time', 0);
@@ -1535,7 +1542,7 @@ class Level extends Phaser.Scene {
                   }
                 });
 
-                if (!isValidMovePos(nextX, nextY)) stall_action = true;
+                if (!isValidMovePos(entity, nextX, nextY)) stall_action = true;
 
                 if (stall_action) {
                   return;
@@ -1543,7 +1550,7 @@ class Level extends Phaser.Scene {
 
                 entityMoveTo(entity, nextX, nextY);
               } else if (action.state === STATE.PUSHED) {
-                if (isValidMovePos(nextX, nextY)) {
+                if (isValidMovePos(entity, nextX, nextY)) {
                   entityMoveTo(entity, nextX, nextY);
                 }
               } else if (action.state === STATE.PUSHING) {
@@ -2006,15 +2013,15 @@ class LevelIntro4 extends LevelIntro {
 class Level4 extends Level {
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', '1', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', '1', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'c', 'w', 's', 'c', 'w'],
     ['w', 's', 's', 'a', 'w', 'a', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 'c', 's', 'w'],
-    ['w', 'a', 's', 'c', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 'a', 's', 'w', 'w', 'a', 'c', 'c', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
+    ['w', 's', 's', 'c', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 'a', 's', 'w', 'w', 'a', 'a', 'c', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
     ['w', 's', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'w', 'w'],
-    ['w', 'a', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 's', 's', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 's', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'c', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 's', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
     ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
-    ['w', 's', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
+    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
     ['w', 'c', 's', 'a', 't', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', '2', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
@@ -2410,7 +2417,6 @@ const config = {
   */
   //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
   scene: [LevelIntro4, Level4]
-  // scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
 };
 
 const game = new Phaser.Game(config); // main process
