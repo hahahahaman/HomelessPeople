@@ -920,6 +920,10 @@ class Level extends Phaser.Scene {
       this.load.image(`spike_${i}`, `assets/spike${i}.png`);
     }
 
+    for (let i = 1; i < 6; ++i) {
+      this.load.image(`fireball_${i}`, `assets/FB500-${i}.png`);
+    }
+
     this.load.image('tut_clicktoselect', 'assets/tut_clicktoselect.png');
     this.load.image('tut_wasd', 'assets/tut_wasd.png');
     this.load.image('tut_clicktopush', 'assets/tut_clicktopush.png');
@@ -1193,11 +1197,14 @@ class Level extends Phaser.Scene {
 
     this.anims.create({
       key: 'fireball',
-      frames: this.anims.generateFrameNumbers('fireball', {
-        start: 0,
-        end: 5
-      }),
-      frameRate: 12,
+      frames: [
+        { key: 'fireball_1' },
+        { key: 'fireball_2' },
+        { key: 'fireball_3' },
+        { key: 'fireball_4' },
+        { key: 'fireball_5' }
+      ],
+      frameRate: 10.8,
       repeat: -1
     });
 
@@ -1795,7 +1802,7 @@ class Level extends Phaser.Scene {
                 fireball.angle -= rotatation;
 
                 entities.add(fireball);
-                fireball.anims.play('fireball', true).setScale(0.5);
+                fireball.anims.play('fireball', true).setScale(0.08);
                 makeFireballAction(fireball);
               }
             }
@@ -1971,7 +1978,7 @@ class Level1 extends Level {
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 't', 't', 'w', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'a', 'a', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', 'a', 'w', 'a', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'a', 'a', 'a', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'w', 'w', 't', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
