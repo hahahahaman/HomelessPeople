@@ -105,6 +105,7 @@ let gameOver = false;
 let entities;
 let selectableEntities;
 let drawFuncs;
+let restarting = true;
 
 function disableEntities() {
   entities.forEach((entity) => {
@@ -348,7 +349,7 @@ function makeFireballAction(entity) {
     x: values.cannon_x,
     y: values.cannon_y,
     elapsed: 0,
-    done: 0.2
+    done: 0.4
   });
 }
 
@@ -802,16 +803,13 @@ function handleScrolling(_this, camera, dt) {
 }
 
 function restart(_this) {
+  restarting = true;
   console.log('restarting level');
-  paused = true;
   _this.scene.restart();
 
-  /*
   entities = [];
   drawFuncs = [];
-
   selectableEntities = [];
-  */
 }
 
 // --------------------------------------
@@ -822,7 +820,7 @@ class LevelIntro extends Phaser.Scene {
   title;
 
   preload() {
-    this.load.setBaseURL('../..');
+    this.load.setBaseURL('./');
   }
 
   create() {}
@@ -878,7 +876,7 @@ class Level extends Phaser.Scene {
   explosionSounds;
 
   preload() {
-    this.load.setBaseURL('../..');
+    this.load.setBaseURL('./');
     this.load.image('bg', 'assets/wallpaper.jpg');
     //this.load.image('grass', 'assets/grass.jpg');
     this.load.spritesheet('homeless_guy', 'assets/homeless_right.png', {
@@ -966,6 +964,7 @@ class Level extends Phaser.Scene {
     this.input.setTopOnly(true);
 
     paused = false;
+    restarting = false;
     levelTime = 0.0;
 
     coins = 0;
@@ -1535,18 +1534,20 @@ class Level extends Phaser.Scene {
   }
 
   update(time, delta) {
+    if (restarting) return;
+
     if (coins === 0) {
       if (!win) {
         win = true;
 
         setTimeout(() => {
           if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
-          else restart(this)
+          else restart(this);
         }, 6000);
       }
     }
 
-    if (gameOver && !win) {
+    if (gameOver && !win && !restarting) {
       restart(this);
       return;
     }
@@ -1666,7 +1667,7 @@ class Level extends Phaser.Scene {
 
       // handle all Entities
       entities.forEach((entity) => {
-        if(!entity.data){
+        if (!entity.data) {
           console.log(`Dataless entity:`);
           console.log(entity)
           console.log(`Entities:`);
@@ -1718,8 +1719,10 @@ class Level extends Phaser.Scene {
                       } else if (obj_val.type === TYPE.ROCK) {
                         hit = true;
                       } else if (obj_val.type === TYPE.PLAYER) {
+                        hit = true;
                         predisableEntity(obj);
                         makeExplodeAction(obj);
+                        console.log('player hit')
                       }
                       if (hit) {
                         predisableEntity(entity);
@@ -1730,8 +1733,8 @@ class Level extends Phaser.Scene {
                   });
                   if (!hit) {
                     if (isPosInWorld(nextX, nextY)) {
-                      makeFireballAction(entity);
                       entityMoveTo(entity, nextX, nextY);
+                      makeFireballAction(entity);
                     } else {
                       disableEntity(entity);
                     }
@@ -1848,7 +1851,7 @@ class Level extends Phaser.Scene {
                 values.direction = direction;
               }
             } else if (values.state === STATE.EXPLODE_SMALL) {
-              console.log('hit small explode');
+              //console.log('hit small explode');
               entity.anims
                 .play('explosion_s', true)
                 .setScale(0.8)
@@ -2523,12 +2526,12 @@ class Level6 extends Level {
   // dodge spikes and fireballs easy
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', 'c', 'a', 'a', 's', 'a', 'w', 'a', 'a', 'rd1', 'w', 'a', 'rd2', 'w', 'a', 'a', 'c', 'w'],
-    ['w', 'a', 'a', 'a', 'w', 's', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'a', 's', 'w', 'a', 'w', 'c', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'w', 'w', 's', 'w', 's', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', '1', 'a', 's', 'w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
-    ['w', '2', 'a', 'w', 'w', 'c', 'a', 'a', 'ru1', 'w', 'a', 'a', 'a', 'ru2', 'w', 'ru4', 'w', 'w'],
+    ['w', 'c', 'a', 'a', 's', 's', 'w', 's', 'a', 'a', 'rd1', 'w', 'rd1', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 'a', 'w', 's', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 's', 'w', 'c', 'w', 's', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'w', 'w', 'a', 'w', 'a', 'w', 's', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', '1', 'a', 's', 'w', 's', 'w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', '2', 'a', 'w', 'w', 's', 's', 'a', 'w', 'w', 'a', 'a', 'a', 'ru1', 'w', 'ru4', 'w', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -2557,7 +2560,6 @@ class Level6 extends Level {
       .setDepth(-10);
     // level stuff
   }
-
 }
 
 class LevelIntro7 extends LevelIntro {
@@ -2566,7 +2568,7 @@ class LevelIntro7 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+    this.load.audio('saying', ['assets/audio/saying.ogg']);
   }
 
   create() {
@@ -2574,7 +2576,7 @@ class LevelIntro7 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'We are coming.', {
+      .text(0, 0, 'I am saying...', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -2587,7 +2589,7 @@ class LevelIntro7 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('coming');
+    const music = this.sound.add('saying');
     music.play();
 
     setTimeout(() => {
@@ -2596,7 +2598,49 @@ class LevelIntro7 extends LevelIntro {
   }
 }
 
-class Level7 extends Level { }
+class Level7 extends Level { 
+  // dodge spikes and fireballs more
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', '1', 'a', 'rd5', 'a', 'a', 'a', 'w', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
+    ['w', '2', 'ru5', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    [ '8', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
+
+  constructor() {
+    super({ key: 'Level7' });
+    this.nextSceneKey = 'LevelIntro8';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+}
 
 class LevelIntro8 extends LevelIntro {
   constructor() {
@@ -2840,8 +2884,8 @@ class LevelIntroEnd extends LevelIntro {
     });
 
     setTimeout(() => {
-      this.scene.start('LevelIntro1');
-    }, 5000);
+      this.scene.start('LevelLogo');
+    }, 10000);
   }
 
   update(time, delta) { }
@@ -2866,8 +2910,8 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
-  //scene: [LevelIntro6]
+  //scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
+  scene: [Level7]
 };
 
 const game = new Phaser.Game(config); // main process
