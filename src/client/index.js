@@ -887,10 +887,10 @@ class Level extends Phaser.Scene {
       frameWidth: 48,
       frameHeight: 48
     });
-    this.load.spritesheet('fireball', 'assets/fireball.png', {
-      frameWidth: 48,
-      frameHeight: 48
-    });
+    // this.load.spritesheet('fireball', 'assets/fireball.png', {
+    //   frameWidth: 48,
+    //   frameHeight: 48
+    // });
     this.load.spritesheet('explosion', 'assets/explosion-4.png', {
       frameWidth: 128,
       frameHeight: 128
