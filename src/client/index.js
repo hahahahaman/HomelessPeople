@@ -816,47 +816,6 @@ class LevelIntro extends Phaser.Scene {
   update(time, delta) {}
 }
 
-class LevelIntro1 extends LevelIntro {
-  constructor() {
-    super({ key: 'LevelIntro1' });
-  }
-
-  preload() {
-    this.load.audio('heyheyhey', ['assets/audio/heyheyhey.ogg']);
-  }
-
-  create() {
-    const width = this.cameras.main.width;
-    const height = this.cameras.main.height;
-
-    this.title = this.add
-      .text(
-        0,
-        0,
-        'Homeless People\n\nDiscretely Getting Money\n\nto Invest in BitConnect.',
-        {
-          font: '20px Courier',
-          fill: '#ffffff',
-          stroke: '#000000',
-          strokeThickness: 4
-        }
-      )
-      .setScrollFactor(0);
-
-    this.title.setPosition(
-      width / 2.0 - this.title.displayWidth / 2.0,
-      height / 2.0 - this.title.displayHeight / 2.0
-    );
-
-    const music = this.sound.add('heyheyhey');
-    music.play();
-
-    setTimeout(() => {
-      this.scene.start('Level1');
-    }, 3700);
-  }
-}
-
 class Level extends Phaser.Scene {
   // { key: 'Level1' }
 
@@ -1373,8 +1332,10 @@ class Level extends Phaser.Scene {
       }
       entity
         .on('mouseDown', (pointer) => {
-          selectedEntity = entity;
-          drawFuncs.add(drawClicked);
+          if (pointer.leftButtonDown()) {
+            selectedEntity = entity;
+            drawFuncs.add(drawClicked);
+          }
         })
         .on('mouseUp', (pointer) => {
           drawFuncs.delete(drawClicked);
@@ -1935,6 +1896,47 @@ class Level extends Phaser.Scene {
   }
 }
 
+class LevelIntro1 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro1' });
+  }
+
+  preload() {
+    this.load.audio('heyheyhey', ['assets/audio/heyheyhey.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(
+        0,
+        0,
+        'Homeless People\n\nDiscretely Getting Money\n\nto Invest in BitConnect.',
+        {
+          font: '20px Courier',
+          fill: '#ffffff',
+          stroke: '#000000',
+          strokeThickness: 4
+        }
+      )
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('heyheyhey');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level1');
+    }, 3700);
+  }
+}
+
 class Level1 extends Level {
   constructor() {
     super({ key: 'Level1' });
@@ -2318,7 +2320,7 @@ class LevelIntro5 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+    this.load.audio('reaching', ['assets/audio/right_now_i_am_reaching.ogg']);
   }
 
   create() {
@@ -2326,7 +2328,7 @@ class LevelIntro5 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'We are coming.', {
+      .text(0, 0, 'Reach one, teach one.', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -2339,7 +2341,7 @@ class LevelIntro5 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('coming');
+    const music = this.sound.add('reaching');
     music.play();
 
     setTimeout(() => {
@@ -2349,8 +2351,21 @@ class LevelIntro5 extends LevelIntro {
 }
 
 class Level5 extends Level {
-  // level with lots of trash
-  // push trash while on spike puzzle a,t,s,1
+  constructor() {
+    super({ key: 'Level5' });
+    this.nextSceneKey = 'LevelIntro6';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+
 }
 
 class LevelIntro6 extends LevelIntro {
@@ -2390,7 +2405,8 @@ class LevelIntro6 extends LevelIntro {
 }
 
 class Level6 extends Level {
-  // tricky timing
+
+  // level with lots of trash
 
 }
 
@@ -2517,7 +2533,7 @@ class Level8 extends Level {
 
   constructor() {
     super({ key: 'Level8' });
-    this.nextSceneKey = 'LevelIntro4';
+    this.nextSceneKey = 'LevelIntro9';
   }
 
   create() {
@@ -2537,7 +2553,7 @@ class LevelIntro9 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+    this.load.audio('faith', ['assets/audio/faith_and_belief.ogg']);
   }
 
   create() {
@@ -2545,7 +2561,7 @@ class LevelIntro9 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'We are coming.', {
+      .text(0, 0, 'Believe.', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -2558,7 +2574,7 @@ class LevelIntro9 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('coming');
+    const music = this.sound.add('faith');
     music.play();
 
     setTimeout(() => {
@@ -2567,7 +2583,38 @@ class LevelIntro9 extends LevelIntro {
   }
 }
 
-class Level9 extends Level { }
+class Level9 extends Level { 
+  // tricky timing
+  // push trash while on spike puzzle a,t,s,1
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', '1', 's', 't', 's', 's', 'a', 'a', 'w', 'a', 'a', 's', 't', 's', 'w', 'w', 'w', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 's', 'a', 'c', 'w', 'c', 'a', 'w', 's', 't', 's', 's', '2', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
+
+  constructor() {
+    super({ key: 'Level9' });
+    this.nextSceneKey = 'LevelIntro10';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+}
 
 class LevelIntro10 extends LevelIntro {
   constructor() {
@@ -2664,14 +2711,7 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  /*
-  scene: {
-    preload,
-    create,
-    update
-  }
-  */
-  // scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
+  //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
   scene: [Level1]
 };
 
