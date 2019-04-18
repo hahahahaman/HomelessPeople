@@ -15,7 +15,9 @@ const STATE = {
   SPIKE_PREP: 'spike_prep',
   SPIKE_UP: 'spike_up',
   SPIKE_DOWN: 'spike_down',
-  EXPLODE: 'explode'
+  EXPLODE: 'explode',
+  EXPLODE_SMALL: 'explode_small',
+  CANNON_FIRE: 'cannon_fire'
 };
 
 const DIRECTION = {
@@ -29,7 +31,9 @@ const TYPE = {
   SPIKE: 'obj_spike',
   TRASH: 'obj_trash',
   COIN: 'obj_coin',
-  TUTORIAL: 'obj_tutorial'
+  TUTORIAL: 'obj_tutorial',
+  CANNON: 'obj_cannon',
+  FIREBALL: 'obj_fireball'
 };
 
 const offset = globals.OFFSET;
@@ -178,6 +182,8 @@ function setEntity(
     action_total_time = 0,
     moveSpeed = 0.5,
     direction = DIRECTION.RIGHT,
+    cannon_x = 0,
+    cannon_y = -1,
     color = 0xffffff,
     state = STATE.IDLE,
     depth = 0,
@@ -205,6 +211,8 @@ function setEntity(
     .set('action_total_time', action_total_time)
     .set('moveSpeed', moveSpeed) // seconds per block
     .set('direction', direction)
+    .set('cannon_x', cannon_x)
+    .set('cannon_y', cannon_y)
     .set('color', color)
     .set('state', state)
     .set('depth', depth)
@@ -276,6 +284,49 @@ function setEntitySpike(
   });
 }
 
+function setEntityFireball(
+  scene,
+  entity,
+  {
+    type = TYPE.FIREBALL, x = 0, y = 0, cannon_x = 0, cannon_y = 1, idle = () => {}
+  } = {}
+) {
+  setEntity(scene, entity, {
+    type,
+    x,
+    y,
+    cannon_x,
+    cannon_y,
+    /*
+    timeLeftText: null,
+    doneText: null,
+    */
+    state: STATE.MOVE,
+    idle
+  });
+}
+
+function setEntityCannon(
+  scene,
+  entity,
+  {
+    type = TYPE.CANNON, color = 0xff0000, x = 0, y = 0, idle = () => {}
+  } = {}
+) {
+  setEntity(scene, entity, {
+    type,
+    x,
+    y,
+    color,
+    /*
+    timeLeftText: null,
+    doneText: null,
+    */
+    state: STATE.IDLE,
+    idle
+  });
+}
+
 function makeTutorialAction(entity, x, y, nextActionTrigger = () => {}, image = '', scale = 1, done = 0) {
   const values = entity.data.values;
   values.actionsDeque.push({
@@ -286,6 +337,35 @@ function makeTutorialAction(entity, x, y, nextActionTrigger = () => {}, image = 
     nextActionTrigger,
     elapsed: 0.0,
     done
+  });
+}
+
+function makeFireballAction(entity) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    state: STATE.MOVE,
+    x: values.cannon_x,
+    y: values.cannon_y,
+    elapsed: 0,
+    done: 0.2
+  });
+}
+
+function makeCannonFireAction(entity) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    state: STATE.CANNON_FIRE,
+    elapsed: 0.0,
+    done: 0.6
+  });
+}
+
+function makeCannonIdleAction(entity) {
+  const values = entity.data.values;
+  values.actionsDeque.push({
+    state: STATE.IDLE,
+    elapsed: 0.0,
+    done: 2 / values.moveSpeed
   });
 }
 
@@ -325,12 +405,22 @@ function makeSpikeDownAction(entity) {
   });
 }
 
-function makeExplodeAction(entity) {
+function makeExplodeAction(entity, state = STATE.EXPLODE) {
   const values = entity.data.values;
-  values.state = STATE.EXPLODE;
+  values.state = state;
+  let rotateBack = 0;
+  if (values.cannon_x === 1) {
+    rotateBack = 90;
+  } else if (values.cannon_x === -1) {
+    rotateBack = -90;
+  } else if (values.cannon_y === -1) {
+    rotateBack = 180;
+  }
+
+  entity.angle += rotateBack;
   values.actionsDeque.clear();
   values.actionsDeque.push({
-    state: STATE.EXPLODE,
+    state,
     elapsed: 0.0,
     done: 1
   });
@@ -385,15 +475,13 @@ function isValidMovePos(entity, worldX, worldY) {
   objWorld[worldY][worldX].forEach((obj) => {
     if (entity.data.values.type === TYPE.COIN) {
       if (obj.data.values.type === TYPE.ROCK) valid = false;
-    } else {
-      if (
-        obj.data.values.type === TYPE.ROCK
+    } else if (
+      obj.data.values.type === TYPE.ROCK
         || obj.data.values.type === TYPE.PLAYER
         || obj.data.values.type === TYPE.TRASH
-      ) {
-        valid = false;
-      }
-
+        || obj.data.values.type === TYPE.CANNON
+    ) {
+      valid = false;
     }
   });
   return valid;
@@ -570,7 +658,7 @@ function drawEntityActions(entity) {
       values.timeLeftText.setVisible(false);
       values.doneText.setVisible(false);
     }
-  } else if (values.type === TYPE.SPIKE) {
+  } else if (values.type === TYPE.SPIKE || values.type === TYPE.CANNON) {
     if (values.action_elapsed_time > values.action_total_time) {
       values.timeLeftText.setVisible(false);
       values.doneText.setVisible(false);
@@ -820,9 +908,21 @@ class Level extends Phaser.Scene {
       frameWidth: 50,
       frameHeight: 50
     });
+    this.load.spritesheet('cannon', 'assets/cannon.png', {
+      frameWidth: 48,
+      frameHeight: 48
+    });
+    this.load.spritesheet('fireball', 'assets/fireball.png', {
+      frameWidth: 48,
+      frameHeight: 48
+    });
     this.load.spritesheet('explosion', 'assets/explosion-4.png', {
       frameWidth: 128,
       frameHeight: 128
+    });
+    this.load.spritesheet('explosion1', 'assets/explosion-1.png', {
+      frameWidth: 32,
+      frameHeight: 32
     });
 
     this.load.spritesheet('coin', 'assets/coins.png', {
@@ -1116,6 +1216,29 @@ class Level extends Phaser.Scene {
     // animations
 
     //--------------------------------------------
+    // Cannon animation
+    //--------------------------------------------
+    this.anims.create({
+      key: 'cannon_fire',
+      frames: this.anims.generateFrameNumbers('cannon', {
+        start: 0,
+        end: 5
+      }),
+      frameRate: 10,
+      repeat: 0
+    });
+
+    this.anims.create({
+      key: 'fireball',
+      frames: this.anims.generateFrameNumbers('fireball', {
+        start: 0,
+        end: 5
+      }),
+      frameRate: 12,
+      repeat: -1
+    });
+
+    //--------------------------------------------
     // Spikes
     //--------------------------------------------
     this.anims.create({
@@ -1146,6 +1269,16 @@ class Level extends Phaser.Scene {
       frames: this.anims.generateFrameNumbers('explosion', {
         start: 0,
         end: 12
+      }),
+      frameRate: 10,
+      repeat: 0
+    });
+
+    this.anims.create({
+      key: 'explosion1',
+      frames: this.anims.generateFrameNumbers('explosion1', {
+        start: 0,
+        end: 7
       }),
       frameRate: 10,
       repeat: 0
@@ -1327,6 +1460,46 @@ class Level extends Phaser.Scene {
           });
           entities.add(trash);
         }
+        if (this.worldArray[y][x][0] === 'r') {
+          const cannon = this.add.sprite(0, 0, 'cannon', '0');
+          const rotation = this.worldArray[y][x][1];
+          const speed = this.worldArray[y][x][2];
+
+          setEntityCannon(this, cannon, {
+            x,
+            y,
+            idle: () => {
+              cannon.setTexture('cannon', '0');
+              cannon.data.set('action_elapsed_time', 0);
+              cannon.data.set('action_total_time', 2 / speed); // time until spike up.
+              makeCannonIdleAction(cannon);
+              makeCannonFireAction(cannon);
+            }
+          });
+
+          const val = cannon.data.values;
+
+          if (rotation === 'r') {
+            cannon.angle += 90 * 3;
+            val.cannon_x = 1;
+            val.cannon_y = 0;
+          } else if (rotation === 'u') {
+            cannon.angle += 90 * 2;
+            val.cannon_x = 0;
+            val.cannon_y = -1;
+          } else if (rotation === 'l') {
+            cannon.angle += 90 * 1;
+            val.cannon_x = -1;
+            val.cannon_y = 0;
+          } else {
+            val.cannon_x = 0;
+            val.cannon_y = 1;
+          }
+
+          val.moveSpeed = speed;
+
+          entities.add(cannon);
+        }
       }
       // console.log(objWorld);
 
@@ -1502,7 +1675,7 @@ class Level extends Phaser.Scene {
         const values = entity.data.values;
         const deque = values.actionsDeque;
 
-        if (values.state !== STATE.EXPLODE && values.type !== TYPE.TUTORIAL) {
+        if (values.state !== STATE.EXPLODE && values.type !== TYPE.TUTORIAL && values.type !== TYPE.FIREBALL) {
           drawEntityActions(entity);
         }
 
@@ -1529,7 +1702,7 @@ class Level extends Phaser.Scene {
           if (action.elapsed > action.done && values.type !== TYPE.TUTORIAL) {
             // rocks cannot be moved around
             if (values.type !== TYPE.ROCK) {
-              if (action.state === STATE.MOVE) {
+              if (action.state === STATE.MOVE && values.type === TYPE.PLAYER) {
                 let stall_action = false;
 
                 objWorld[nextY][nextX].forEach((obj) => {
@@ -1549,6 +1722,28 @@ class Level extends Phaser.Scene {
                 }
 
                 entityMoveTo(entity, nextX, nextY);
+              } else if (action.state === STATE.MOVE && values.type === TYPE.FIREBALL) {
+                let hit = false;
+                objWorld[values.y][values.x].forEach((obj) => {
+                  const obj_val = obj.data.values;
+                  if (obj !== entity) {
+                    if (obj_val.type === TYPE.PLAYER
+                      || obj_val.type === TYPE.TRASH
+                      || obj_val.type === TYPE.COIN
+                      || obj_val.type === TYPE.CANNON
+                      || obj_val.type === TYPE.FIREBALL) {
+                      disableEntity(obj);
+                      console.log(obj_val.type);
+                    }
+                    hit = true;
+                    predisableEntity(entity);
+                    makeExplodeAction(entity, STATE.EXPLODE_SMALL);
+                  }
+                });
+                if (!hit && isPosInWorld(nextX, nextY)) {
+                  makeFireballAction(entity);
+                  entityMoveTo(entity, nextX, nextY);
+                }
               } else if (action.state === STATE.PUSHED) {
                 if (isValidMovePos(entity, nextX, nextY)) {
                   entityMoveTo(entity, nextX, nextY);
@@ -1565,35 +1760,59 @@ class Level extends Phaser.Scene {
                   // add pushed action to the deque
                   makePushedAction(obj, action.x, action.y);
                 });
-              } else if (action.state === STATE.EXPLODE) {
+              } else if (action.state === STATE.EXPLODE || action.state === STATE.EXPLODE_SMALL) {
                 disableEntity(entity);
               }
             }
 
             const extraTime = action.elapsed - action.done;
-
+           
             deque.shift();
             if (deque.length > 0) {
               // transfer time to next action
               const nextAction = deque.peek();
+              
               nextAction.elapsed += extraTime;
-
+              //console.log("here: " + values.type + nextAction.elapsed)
               if (nextAction.state === STATE.SPIKE_PREP) {
                 entity.anims.play('spike_prep', false);
                 // console.log('prep');
               } else if (nextAction.state === STATE.SPIKE_DOWN) {
-                entity.anims.play('spike_down', false);
+                entity.setTexture('spike_4');
                 // console.log('down');
               } else if (nextAction.state === STATE.SPIKE_UP) {
                 entity.setTexture('spike_4');
                 // console.log('up');
+              } else if (nextAction.state === STATE.CANNON_FIRE) {
+                entity.anims.play('cannon_fire', false);
+                const fireball = this.add.sprite(0, 0, 'fireball', '0');
+                setEntityFireball(this, fireball, {
+                  x: values.x + values.cannon_x,
+                  y: values.y + values.cannon_y,
+                  cannon_x: values.cannon_x,
+                  cannon_y: values.cannon_y
+                });
+
+                let rotatation = 0;
+                if (values.cannon_x === 1) {
+                  rotatation = 90;
+                } else if (values.cannon_x === -1) {
+                  rotatation = -90;
+                } else if (values.cannon_y === -1) {
+                  rotatation = 180;
+                }
+                fireball.angle -= rotatation;
+
+                entities.add(fireball);
+                fireball.anims.play('fireball', true).setScale(0.5);
+                makeFireballAction(fireball);
               }
             }
           } else if (values.type !== TYPE.TUTORIAL) {
             // action not done, or action execution on start instead of end.
             action.elapsed += dt;
             values.state = action.state;
-
+            //console.log("EVER HERE???" + values.type)
             if (values.state === STATE.EXPLODE) {
               entity.anims
                 .play('explosion', true)
@@ -1601,15 +1820,23 @@ class Level extends Phaser.Scene {
                 .setOrigin(0.5, 0.8)
                 .setDepth(10);
 
+
               // play explosion sound
               this.explosionSounds[Phaser.Math.Between(0, this.explosionSounds.length - 1)].play();
-            } else if (values.state === STATE.MOVE) {
+            } else if (values.state === STATE.MOVE && values.type === TYPE.PLAYER) {
               entity.anims.play('walk_right', true);
 
               if (direction !== null && direction !== values.direction) {
                 entity.flipX = !entity.flipX;
                 values.direction = direction;
               }
+            } else if (values.state === STATE.EXPLODE_SMALL) {
+              console.log('hit small explode');
+              entity.anims
+                .play('explosion1', true)
+                .setScale(0.8)
+                .setOrigin(0.5, 0.8)
+                .setDepth(10);
             }
 
             if (values.type === TYPE.SPIKE) {
@@ -1624,6 +1851,15 @@ class Level extends Phaser.Scene {
               } else if (action.state === STATE.IDLE) {
                 // console.log('idle');
                 entity.setTexture('spike_1');
+              }
+            }
+
+            if (values.type === TYPE.CANNON) {
+              values.action_elapsed_time += dt;
+
+              if (action.state === STATE.IDLE) {
+                // console.log('idle');
+                entity.setTexture('cannon', '0');
               }
             }
           } else if (values.type === TYPE.TUTORIAL) {
@@ -1665,7 +1901,7 @@ class Level extends Phaser.Scene {
         0
       );
       clockText.setDepth(100);
-      
+
       // draw rect around
       graphics.lineStyle(2, 0xffffff, 0.9);
       graphics.strokeRect(
@@ -1688,9 +1924,9 @@ class Level1 extends Level {
 
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', 'a', 'a', 'a', 'c', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'rd1', 'a', 'c', 'a', 'a', 'ru1', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'rr5', 'a', 'rl1', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 't', 't', 'w', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'a', 'a', 'w', 'w', 'w', 'w', 'w', 'w'],
@@ -1699,7 +1935,7 @@ class Level1 extends Level {
     ['w', 'w', 'w', 't', 'w', 'w', 'w', 'w', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
-    ['w', 'a', 'a', 's', 't', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'rl5', 's', 't', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
     ['w', 'a', 'a', 'a', 'a', '1', '2', 'a', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w']
@@ -2093,7 +2329,7 @@ class LevelIntro5 extends LevelIntro {
   }
 }
 
-class Level5 extends Level { 
+class Level5 extends Level {
   // level with lots of trash
 }
 
@@ -2136,7 +2372,7 @@ class LevelIntro6 extends LevelIntro {
 class Level6 extends Level {
   // tricky timing
 
- }
+}
 
 class LevelIntro7 extends LevelIntro {
   constructor() {
@@ -2415,8 +2651,8 @@ const config = {
     update
   }
   */
-  //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
-  scene: [LevelIntro4, Level4]
+  // scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
+  scene: [Level1]
 };
 
 const game = new Phaser.Game(config); // main process
