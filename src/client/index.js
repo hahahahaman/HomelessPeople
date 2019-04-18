@@ -1678,7 +1678,6 @@ class Level extends Phaser.Scene {
             if (values.type !== TYPE.ROCK) {
               if (action.state === STATE.MOVE) {
                 if (values.type === TYPE.FIREBALL) {
-
                   let hit = false;
                   objWorld[values.y][values.x].forEach((obj) => {
                     const obj_val = obj.data.values;
