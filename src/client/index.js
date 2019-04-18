@@ -2648,7 +2648,7 @@ class LevelIntro8 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+    this.load.audio('miss_me', ['assets/audio/miss_me_with_that.ogg']);
   }
 
   create() {
@@ -2656,7 +2656,7 @@ class LevelIntro8 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'We are coming.', {
+      .text(0, 0, '...miss me with that bullshit.', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -2669,7 +2669,7 @@ class LevelIntro8 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('coming');
+    const music = this.sound.add('miss_me');
     music.play();
 
     setTimeout(() => {
@@ -2680,49 +2680,35 @@ class LevelIntro8 extends LevelIntro {
 
 class Level8 extends Level {
   worldArray = [
-    ['w', 'w', 'w', 'w'],
-    ['w', 'c', 's', 'w'],
-    ['w', 's', 'c', 'w'],
-    ['w', 'c', 's', 'w'],
-    ['w', 's', 'c', 'w'],
-    ['w', 'c', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 'a', 'a', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', 's', 's', 'w'],
-    ['w', '2', '1', 'w'],
-    ['w', 'w', 'w', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 's', 'c', 'c', 's', 'w'],
+    ['w', 'c', 's', 's', 'c', 'w'],
+    ['w', 's', 'c', 'c', 's', 'w'],
+    ['w', 'c', 's', 's', 'c', 'w'],
+    ['w', 'c', 'rl1', 'rr1', 'a', 'w'],
+    ['w', 'a', 'rl1', 'rr1', 'a', 'w'],
+    ['w', 's', 's', 's', 's', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'rr9', 'a', 'a', 'rl9', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', '1', 'a', 'a', '2', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
   bgWorldArray = [
-    ['792', '832', '832', '793'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['795', '714', '714', '794'],
-    ['829', '831', '831', '830']
+    ['792', '832', '832', '832', '832', '793'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '794'],
+    ['829', '831', '831', '831', '831', '830']
   ];
 
   constructor() {
@@ -2744,6 +2730,169 @@ class Level8 extends Level {
 class LevelIntro9 extends LevelIntro {
   constructor() {
     super({ key: 'LevelIntro9' });
+  }
+
+  preload() {
+    this.load.audio('murder_everything', ['assets/audio/murder_everything.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'chitty chitty bang', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('murder_everything');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level9');
+    }, 4000);
+  }
+}
+
+class Level9 extends Level { 
+
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'c', 'a', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rd2', 'a', 't', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'rl3', 'rr3', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl9', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'rr9', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'ru1', 't', 't', 'ru1', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 't', '1', '2', 't', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'rd1', 't', 't', 'rd1', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'rr9', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl9', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 't', 'a', 'ru2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'ru2', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
+
+  constructor() {
+    super({ key: 'Level9' });
+    this.nextSceneKey = 'LevelIntro10';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+
+}
+
+class LevelIntro10 extends LevelIntro {
+  constructor() {
+    super({ key: 'LevelIntro10' });
+  }
+
+  preload() {
+    this.load.audio('scam', ['assets/audio/thats_a_scam.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'No One Would Throw Me Under The Bus.', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('scam');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level10');
+    }, 4000);
+  }
+}
+
+class Level10 extends Level {
+  //scam
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', '2', 'rd1', 'rd1', 'a', 'a', 'c', 'w'],
+    ['w', '1', 'a', 'a', 't', 'a', 'a', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    ['792', '832', '832', '832', '832', '832', '832','793'],
+    ['795', '714', '714', '714', '714', '714', '714','794'],
+    ['795', '714', '714', '714', '714', '714', '714','794'],
+    ['795', '714', '714', '714', '714', '714', '714','794'],
+    ['829', '831', '831', '831', '831', '831', '831','830']
+  ];
+
+  constructor() {
+    super({ key: 'Level10' });
+    this.nextSceneKey = 'LevelIntro11';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+ }
+
+class LevelIntro11 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntr11' });
   }
 
   preload() {
@@ -2772,12 +2921,14 @@ class LevelIntro9 extends LevelIntro {
     music.play();
 
     setTimeout(() => {
-      this.scene.start('Level9');
+      this.scene.start('Level11');
     }, 4000);
   }
+
 }
 
-class Level9 extends Level { 
+class Level11 extends Level {
+
   // tricky timing
   // push trash while on spike puzzle a,t,s,1
   worldArray = [
@@ -2795,8 +2946,8 @@ class Level9 extends Level {
   ];
 
   constructor() {
-    super({ key: 'Level9' });
-    this.nextSceneKey = 'LevelIntro10';
+    super({ key: 'Level11' });
+    this.nextSceneKey = 'LevelIntro12';
   }
 
   create() {
@@ -2810,43 +2961,6 @@ class Level9 extends Level {
   }
 }
 
-class LevelIntro10 extends LevelIntro {
-  constructor() {
-    super({ key: 'LevelIntro10' });
-  }
-
-  preload() {
-    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
-  }
-
-  create() {
-    const width = this.cameras.main.width;
-    const height = this.cameras.main.height;
-
-    this.title = this.add
-      .text(0, 0, 'We are coming.', {
-        font: '20px Courier',
-        fill: '#ffffff',
-        stroke: '#000000',
-        strokeThickness: 4
-      })
-      .setScrollFactor(0);
-
-    this.title.setPosition(
-      width / 2.0 - this.title.displayWidth / 2.0,
-      height / 2.0 - this.title.displayHeight / 2.0
-    );
-
-    const music = this.sound.add('coming');
-    music.play();
-
-    setTimeout(() => {
-      this.scene.start('Level10');
-    }, 4000);
-  }
-}
-
-class Level10 extends Level { }
 
 class LevelIntroEnd extends LevelIntro {
   constructor() {
@@ -2910,8 +3024,8 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
-  //scene: [Level7]
+  //scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
+  scene: [LevelIntro10, Level10]
 };
 
 const game = new Phaser.Game(config); // main process
