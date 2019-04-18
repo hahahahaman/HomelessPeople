@@ -54,23 +54,6 @@ const worldArray = [
   ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w']
 ];
 
-/*
-const bgWorldArray = [
-  ['15', '15', '15', '15', '15', '15', '15', '15'],
-  ['15', '59', '04', '06', '02', '02', '60', '15'],
-  ['15', '14', '51', '51', '51', '51', '48', '15'],
-  ['15', '14', '51', '51', '51', '51', '49', '15'],
-  ['15', '14', '51', '51', '51', '51', '50', '15'],
-  ['15', '14', '51', '51', '51', '51', '49', '15'],
-  ['15', '14', '51', '51', '51', '51', '48', '15'],
-  ['15', '14', '51', '51', '51', '51', '47', '15'],
-  ['15', '14', '51', '51', '51', '51', '48', '15'],
-  ['15', '14', '51', '51', '51', '51', '49', '15'],
-  ['15', '61', '54', '55', '54', '53', '46', '15'],
-  ['15', '15', '15', '15', '15', '15', '15', '15']
-];
-*/
-
 const bgWorldArray = [
   ['8', '10', '10', '10', '10', '10', '10', '9'],
   ['11', '14', '14', '14', '14', '14', '14', '48'],
@@ -1261,10 +1244,8 @@ class Level extends Phaser.Scene {
       }
       entity
         .on('mouseDown', (pointer) => {
-          if (pointer.leftButtonDown()) {
-            selectedEntity = entity;
-            drawFuncs.add(drawClicked);
-          }
+          selectedEntity = entity;
+          drawFuncs.add(drawClicked);
         })
         .on('mouseUp', (pointer) => {
           drawFuncs.delete(drawClicked);
@@ -1992,7 +1973,7 @@ class LevelIntro4 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('coming', ['assets/audio/we_are_coming.ogg']);
+    this.load.audio('whats', ['assets/audio/whats_up_bitconnect.ogg']);
   }
 
   create() {
@@ -2000,7 +1981,7 @@ class LevelIntro4 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'We are coming.', {
+      .text(0, 0, 'Got BitConnect?', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -2013,7 +1994,7 @@ class LevelIntro4 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('coming');
+    const music = this.sound.add('whats', { volume: 0.2 });
     music.play();
 
     setTimeout(() => {
@@ -2026,15 +2007,15 @@ class Level4 extends Level {
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
     ['w', '1', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 's', 's', 'a', 'w', 'a', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
+    ['w', 's', 's', 'a', 'w', 'a', 'c', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 'c', 's', 'w'],
     ['w', 'a', 's', 'c', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 'a', 's', 'a', 'w', 'a', 'c', 'c', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'a', 's', 'w', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'a', 'w'],
+    ['w', 'a', 's', 'w', 'w', 'a', 'c', 'c', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
+    ['w', 's', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'w', 'w'],
     ['w', 'a', 's', 'a', 't', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 'a', 's', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
-    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', 'w', 'w'],
-    ['w', 'a', 's', 'a', 't', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 't', 's', '2', 'w'],
+    ['w', 's', 's', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'a', 't', 'a', 'a', 'w', 's', 'c', 'w'],
+    ['w', 'a', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
+    ['w', 's', 's', 'a', 'w', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', 'w', 'w'],
+    ['w', 'c', 's', 'a', 't', 'a', 'a', 'a', 't', 'a', 'a', 'w', 'a', 'a', 'w', 's', '2', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -2105,7 +2086,9 @@ class LevelIntro5 extends LevelIntro {
   }
 }
 
-class Level5 extends Level { }
+class Level5 extends Level { 
+  // level with lots of trash
+}
 
 class LevelIntro6 extends LevelIntro {
   constructor() {
@@ -2143,7 +2126,10 @@ class LevelIntro6 extends LevelIntro {
   }
 }
 
-class Level6 extends Level { }
+class Level6 extends Level {
+  // tricky timing
+
+ }
 
 class LevelIntro7 extends LevelIntro {
   constructor() {
@@ -2423,7 +2409,7 @@ const config = {
   }
   */
   //scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
-  scene: [LevelIntro3, Level3]
+  scene: [LevelIntro4, Level4]
   // scene: [LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3]
 };
 
