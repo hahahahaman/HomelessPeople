@@ -2892,7 +2892,7 @@ class Level10 extends Level {
 class LevelIntro11 extends LevelIntro {
 
   constructor() {
-    super({ key: 'LevelIntr11' });
+    super({ key: 'LevelIntro11' });
   }
 
   preload() {
@@ -2928,6 +2928,78 @@ class LevelIntro11 extends LevelIntro {
 }
 
 class Level11 extends Level {
+
+  // tricky timing
+  // push trash while on spike puzzle a,t,s,1
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', '1', 's', 't', 's', 's', 'a', 'a', 'w', 'a', 'a', 's', 't', 's', 'w', 'w', 'w', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 's', 'a', 'c', 'w', 'c', 'a', 'w', 's', 't', 's', 's', '2', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
+
+  constructor() {
+    super({ key: 'Level11' });
+    this.nextSceneKey = 'LevelIntro12';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+}
+
+class LevelIntro12 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntro12' });
+  }
+
+  preload() {
+    this.load.audio('going', ['assets/audio/hey_you_going.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'What Am I Going to Do?', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('going');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level12');
+    }, 3000);
+  }
+
+}
+
+class Level12 extends Level {
 
   // tricky timing
   // push trash while on spike puzzle a,t,s,1
@@ -2999,7 +3071,7 @@ class LevelIntroEnd extends LevelIntro {
 
     setTimeout(() => {
       this.scene.start('LevelLogo');
-    }, 10000);
+    }, 35000);
   }
 
   update(time, delta) { }
@@ -3025,7 +3097,7 @@ const config = {
     }
   },
   //scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
-  scene: [LevelIntro10, Level10]
+  scene: [LevelIntro11, Level11]
 };
 
 const game = new Phaser.Game(config); // main process
