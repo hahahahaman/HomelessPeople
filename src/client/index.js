@@ -2910,8 +2910,8 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  //scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
-  scene: [Level7]
+  scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
+  //scene: [Level7]
 };
 
 const game = new Phaser.Game(config); // main process
