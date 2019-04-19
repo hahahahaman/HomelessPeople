@@ -90,6 +90,7 @@ let cursors;
 let keys;
 // let debugText;
 let clockText;
+let coinText;
 let levelTime = 0.0;
 let pausedText;
 let selectedEntity;
@@ -1530,6 +1531,13 @@ class Level extends Phaser.Scene {
           fill: '#ffffff'
         })
         .setScrollFactor(0);
+
+      coinText = this.add
+        .text(0, 0, '', {
+          font: '20px Courier',
+          fill: '#ffffff'
+        })
+        .setScrollFactor(0);
     }
   }
 
@@ -1931,6 +1939,13 @@ class Level extends Phaser.Scene {
       );
       clockText.setDepth(100);
 
+      coinText.setText(`Coins Left: ${coins}`);
+      coinText.setPosition(
+        0,
+        0
+      );
+      coinText.setDepth(100);
+
       // draw rect around
       graphics.lineStyle(2, 0xffffff, 0.9);
       graphics.strokeRect(
@@ -2097,7 +2112,7 @@ class Level1 extends Level {
         return true;
       }
       return false;
-    }, 'tut_scroll', 0.5, 10);
+    }, 'tut_scroll', 1, 10);
 
     makeTutorialAction(tutorial, 4, 11, () => {
       const values = tutorial.data.values;
@@ -2106,7 +2121,7 @@ class Level1 extends Level {
         return true;
       }
       return false;
-    }, 'tut_wasd', 0.5, 15);
+    }, 'tut_wasd', 0.5, 25);
 
     objWorld[12][4].forEach((entity) => {
       if (entity.data.values.type === TYPE.TRASH) {
