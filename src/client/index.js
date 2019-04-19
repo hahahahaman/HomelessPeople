@@ -1767,6 +1767,7 @@ class Level extends Phaser.Scene {
                   if (!isValidMovePos(entity, nextX, nextY)) stall_action = true;
 
                   if (stall_action) {
+
                     return;
                   }
 
@@ -2005,7 +2006,7 @@ class LevelLogo extends LevelIntro {
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
     
-    this.logo = this.add.sprite(width / 2.0, height / 2.0, 'shadybasement').setScale(0.27);
+    this.logo = this.add.sprite(width / 2.0, height / 2.0, 'shadybasement').setScale(0.3);
 
     // this.logo.setPosition(
     //   width / 2.0 - this.logo.displayWidth / 2.0,
@@ -2812,20 +2813,20 @@ class Level9 extends Level {
 
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', 'c', 'a', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rd2', 'a', 't', 'a', 'w'],
+    ['w', 'c', 'a', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rd2', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'rl3', 'rr3', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl9', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'rr9', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'rr2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl4', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'rr4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'ru1', 't', 't', 'ru1', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 't', 't', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 't', '1', '2', 't', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'rd1', 't', 't', 'rd1', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 't', 't', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'rr9', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl9', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'rr4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl4', 'w', 'c', 'w'],
     ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 't', 'a', 'ru2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'ru2', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'w', 'a', 'ru2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'ru2', 'a', 'a', 'a', 'c', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -3207,7 +3208,7 @@ class LevelIntroEnd extends LevelIntro {
 
     setTimeout(() => {
       this.scene.start('LevelLogo');
-    }, 35000);
+    }, 10000);
   }
 
   update(time, delta) { }
@@ -3245,11 +3246,11 @@ const config = {
      LevelIntro9, Level9,
      LevelIntro10, Level10,
      LevelIntro11, Level11,
-     //LevelIntro12, Level12,
-     //LevelIntro13, Level13
-    ]
-    */
-  scene: [LevelIntro13, Level13]
+     LevelIntro12, Level12,
+     LevelIntro13, Level13
+  ]
+  */
+  scene: [LevelIntro9, Level9]
 };
 
 const game = new Phaser.Game(config); // main process
