@@ -3001,6 +3001,62 @@ class LevelIntro12 extends LevelIntro {
 
 class Level12 extends Level {
 
+  constructor() {
+    super({ key: 'Level12' });
+    this.nextSceneKey = 'LevelIntro13';
+  }
+
+  create() {
+    // put background first or make background depth negative so that it is in the back
+    super.create();
+    this.add
+      .image(0, 0, 'bg')
+      .setOrigin(0)
+      .setDepth(-10);
+    // level stuff
+  }
+}
+
+class LevelIntro13 extends LevelIntro {
+
+  constructor() {
+    super({ key: 'LevelIntro13' });
+  }
+
+  preload() {
+    this.load.audio('going', ['assets/audio/hey_you_going.ogg']);
+  }
+
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+
+    this.title = this.add
+      .text(0, 0, 'What Am I Going to Do?', {
+        font: '20px Courier',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 4
+      })
+      .setScrollFactor(0);
+
+    this.title.setPosition(
+      width / 2.0 - this.title.displayWidth / 2.0,
+      height / 2.0 - this.title.displayHeight / 2.0
+    );
+
+    const music = this.sound.add('going');
+    music.play();
+
+    setTimeout(() => {
+      this.scene.start('Level12');
+    }, 3000);
+  }
+
+}
+
+class Level13 extends Level {
+
   // tricky timing
   // push trash while on spike puzzle a,t,s,1
   worldArray = [
@@ -3018,8 +3074,8 @@ class Level12 extends Level {
   ];
 
   constructor() {
-    super({ key: 'Level11' });
-    this.nextSceneKey = 'LevelIntro12';
+    super({ key: 'Level13' });
+    this.nextSceneKey = 'LevelIntroEnd';
   }
 
   create() {
@@ -3096,8 +3152,22 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  //scene: [LevelLogo, LevelIntro1, Level1, LevelIntro2, Level2, LevelIntro3, Level3, LevelIntro4, Level4]
-  scene: [LevelIntro11, Level11]
+  scene: [LevelLogo,
+     LevelIntro1, Level1,
+     LevelIntro2, Level2,
+     LevelIntro3, Level3,
+     LevelIntro4, Level4,
+     LevelIntro5, Level5,
+     LevelIntro6, Level6,
+     LevelIntro7, Level7,
+     LevelIntro8, Level8,
+     LevelIntro9, Level9,
+     LevelIntro10, Level10,
+     LevelIntro11, Level11,
+     //LevelIntro12, Level12,
+     //LevelIntro13, Level13
+    ]
+  //scene: [LevelIntro11, Level11]
 };
 
 const game = new Phaser.Game(config); // main process
