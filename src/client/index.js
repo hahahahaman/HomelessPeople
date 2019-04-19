@@ -841,6 +841,7 @@ function handleScrolling(_this, camera, dt) {
 function restart(_this) {
   restarting = true;
   console.log('restarting level');
+  if(_this.music) _this.music.stop();
   _this.scene.restart();
 
   entities = [];
