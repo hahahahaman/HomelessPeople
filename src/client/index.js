@@ -91,6 +91,7 @@ let keys;
 // let debugText;
 let clockText;
 let coinText;
+let stuckText;
 let levelTime = 0.0;
 let pausedText;
 let selectedEntity;
@@ -478,15 +479,20 @@ function isPosInWorld(worldX, worldY) {
 function isValidMovePos(entity, worldX, worldY) {
   if (!isPosInWorld(worldX, worldY)) return false;
 
+  const values = entity.data.values;
+
   let valid = true;
   objWorld[worldY][worldX].forEach((obj) => {
-    if (entity.data.values.type === TYPE.COIN) {
-      if (obj.data.values.type === TYPE.ROCK) valid = false;
+    const objValues = obj.data.values;
+    if (values.type === TYPE.COIN) {
+      if (objValues.type === TYPE.ROCK) valid = false;
+    } else if (values.type === TYPE.FIREBALL) {
+      if (objValues.type === TYPE.ROCK) valid = false;
     } else if (
-      obj.data.values.type === TYPE.ROCK
-        || obj.data.values.type === TYPE.PLAYER
-        || obj.data.values.type === TYPE.TRASH
-        || obj.data.values.type === TYPE.CANNON
+      objValues.type === TYPE.ROCK
+        || objValues.type === TYPE.PLAYER
+        || objValues.type === TYPE.TRASH
+        || objValues.type === TYPE.CANNON
     ) {
       valid = false;
     }
@@ -1061,6 +1067,11 @@ class Level extends Phaser.Scene {
         if (!paused && selectedEntity !== null) {
           if (selectedEntity.getData('actionsDeque').length > 0) {
             selectedEntity.getData('actionsDeque').pop(); // remove from back
+
+            if (selectedEntity.getData('actionsDeque').length === 0) {
+              // can't be stuck anymore
+              stuckText.setVisible(false);
+            }
           }
         }
       })
@@ -1068,6 +1079,9 @@ class Level extends Phaser.Scene {
         // clear actions
         if (!paused && selectedEntity !== null) {
           selectedEntity.getData('actionsDeque').clear();
+
+          // can't be stuck anymore
+          stuckText.setVisible(false);
         }
       })
       .on('keydown-ONE', () => {
@@ -1556,14 +1570,25 @@ class Level extends Phaser.Scene {
           font: '35px Courier',
           fill: '#ffffff'
         })
-        .setScrollFactor(0);
+        .setScrollFactor(0)
+        .setDepth(100);
 
       coinText = this.add
         .text(0, 0, '', {
           font: '20px Courier',
           fill: '#ffffff'
         })
-        .setScrollFactor(0);
+        .setScrollFactor(0)
+        .setDepth(100);
+
+      stuckText = this.add
+        .text(0, 0, 'PRESS C or X to get Unstuck.\nC clears ALL actions.\nX undoes an action.', {
+          font: 'bold 35px Arial',
+          fill: '#fd6a02'
+        })
+        .setScrollFactor(0)
+        .setDepth(1337)
+        .setVisible(false);
     }
   }
 
@@ -1585,7 +1610,6 @@ class Level extends Phaser.Scene {
       restart(this);
       return;
     }
-
 
     const dt = delta / 1000;
     const camera = this.cameras.main;
@@ -1772,16 +1796,15 @@ class Level extends Phaser.Scene {
                         hit = true;
                         predisableEntity(obj);
                         makeExplodeAction(obj);
-                        console.log('player hit')
-                      }
-                      if (hit) {
-                        predisableEntity(entity);
-                        makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
-                        entity.setTexture('explosion_s', '0');
+                        console.log('player hit');
                       }
                     }
                   });
-                  if (!hit) {
+                  if (hit) {
+                    predisableEntity(entity);
+                    makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
+                    entity.setTexture('explosion_s', '0');
+                  } else {
                     if (isPosInWorld(nextX, nextY)) {
                       entityMoveTo(entity, nextX, nextY);
                       makeFireballAction(entity);
@@ -1789,7 +1812,7 @@ class Level extends Phaser.Scene {
                       disableEntity(entity);
                     }
                   }
-                } else {
+                } else if ( values.type === TYPE.PLAYER ) {
                   let stall_action = false;
 
                   objWorld[nextY][nextX].forEach((obj) => {
@@ -1805,6 +1828,11 @@ class Level extends Phaser.Scene {
                   if (!isValidMovePos(entity, nextX, nextY)) stall_action = true;
 
                   if (stall_action) {
+                    stuckText.setVisible( true );
+                    stuckText.setPosition(
+                      this.cameras.main.width / 2.0 - stuckText.displayWidth / 2.0,
+                      this.cameras.main.height / 2.0 - stuckText.displayHeight / 2.0
+                    );
                     return;
                   }
 
@@ -1959,6 +1987,32 @@ class Level extends Phaser.Scene {
           values.idle();
           if (values.type === TYPE.FIREBALL) {
             console.log('fireball');
+            let hit = false;
+            objWorld[values.y][values.x].forEach((obj) => {
+              const obj_val = obj.data.values;
+              if (obj !== entity) {
+                if (obj_val.type === TYPE.TRASH
+                  || obj_val.type === TYPE.COIN
+                  || obj_val.type === TYPE.CANNON
+                  || (obj_val.type === TYPE.FIREBALL && obj_val.state !== STATE.EXPLODE_SMALL)) {
+                  disableEntity(obj);
+                  hit = true;
+                  console.log(obj_val.type);
+                } else if (obj_val.type === TYPE.ROCK) {
+                  hit = true;
+                } else if (obj_val.type === TYPE.PLAYER) {
+                  hit = true;
+                  predisableEntity(obj);
+                  makeExplodeAction(obj);
+                  console.log('player hit');
+                }
+              }
+            });
+            if (hit) {
+              predisableEntity(entity);
+              makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
+              entity.setTexture('explosion_s', '0');
+            }
           }
         }
 
@@ -2017,7 +2071,7 @@ class LevelLogo extends LevelIntro {
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
     
-    this.logo = this.add.sprite(width / 2.0, height / 2.0, 'shadybasement').setScale(0.27);
+    this.logo = this.add.sprite(width / 2.0, height / 2.0, 'shadybasement').setScale(0.3);
 
     // this.logo.setPosition(
     //   width / 2.0 - this.logo.displayWidth / 2.0,
@@ -2824,20 +2878,20 @@ class Level9 extends Level {
 
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', 'c', 'a', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rd2', 'a', 't', 'a', 'w'],
+    ['w', 'c', 'a', 'a', 'a', 'rd2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rd2', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'rl3', 'rr3', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl9', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'rr9', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'rr2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl4', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'rr4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'ru1', 't', 't', 'ru1', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 't', 't', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 't', '1', '2', 't', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'rd1', 't', 't', 'rd1', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 't', 't', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'rr9', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl9', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'rr4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl4', 'w', 'c', 'w'],
     ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 't', 'a', 'ru2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'ru2', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'w', 'a', 'ru2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'ru2', 'a', 'a', 'a', 'c', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -2923,11 +2977,11 @@ class Level10 extends Level {
   ];
 
   bgWorldArray = [
-    ['792', '832', '832', '832', '832', '832', '832','793'],
-    ['795', '714', '714', '714', '714', '714', '714','794'],
-    ['795', '714', '714', '714', '714', '714', '714','794'],
-    ['795', '714', '714', '714', '714', '714', '714','794'],
-    ['829', '831', '831', '831', '831', '831', '831','830']
+    ['792', '832', '832', '832', '832', '832', '832', '793'],
+    ['795', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '794'],
+    ['795', '714', '714', '714', '714', '714', '714', '794'],
+    ['829', '831', '831', '831', '831', '831', '831', '830']
   ];
 
   constructor() {
@@ -3025,7 +3079,7 @@ class LevelIntro12 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('going', ['assets/audio/hey_you_going.ogg']);
+    this.load.audio('going', ['assets/audio/hey_youre_going.ogg']);
   }
 
   create() {
@@ -3033,7 +3087,7 @@ class LevelIntro12 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'What Am I Going to Do?', {
+      .text(0, 0, 'Push through.\nRed doesn\'t mean you can\'t.', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -3046,7 +3100,7 @@ class LevelIntro12 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('going');
+    const music = this.sound.add('going', { volume });
     music.play();
 
     setTimeout(() => {
@@ -3057,6 +3111,32 @@ class LevelIntro12 extends LevelIntro {
 }
 
 class Level12 extends Level {
+  // push fire ball into other cannons
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'ru9', 'w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', '2', '1', 'a', 'w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    [ '8', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
 
   constructor() {
     super({ key: 'Level12' });
@@ -3081,7 +3161,7 @@ class LevelIntro13 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('going', ['assets/audio/hey_you_going.ogg']);
+    this.load.audio('love', ['assets/audio/i_love.ogg']);
   }
 
   create() {
@@ -3089,7 +3169,7 @@ class LevelIntro13 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'What Am I Going to Do?', {
+      .text(0, 0, 'Homelessness or:\nHow I Learned to Stop Worrying\nand Love BitConnect?', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -3102,24 +3182,27 @@ class LevelIntro13 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('going');
+    const music = this.sound.add('love', { volume });
     music.play();
 
     setTimeout(() => {
-      this.scene.start('Level12');
-    }, 3000);
+      this.scene.start('Level13');
+    }, 5000);
   }
 
 }
 
 class Level13 extends Level {
-
-  // tricky timing
-  // push trash while on spike puzzle a,t,s,1
   worldArray = [
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
-    ['w', '1', 's', 't', 's', 's', 'a', 'a', 'w', 'a', 'a', 's', 't', 's', 'w', 'w', 'w', 'w'],
-    ['w', 'w', 'w', 'w', 'w', 's', 'a', 'c', 'w', 'c', 'a', 'w', 's', 't', 's', 's', '2', 'w'],
+    ['w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'rr2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl2', 'a', 'w'],
+    ['w', 'a', 'a', 't', 't', 't', 'a', 't', 't', 't', 'a', 't', 't', 't', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 't', 'c', 't', 'a', 'a', 't', 'a', 'a', 'a', 't', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 't', 't', 't', 'a', 'a', 't', '2', 'a', 'a', 't', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 't', 'a', 't', 'a', 'a', 't', '1', 'a', 'a', 't', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 't', 't', 't', 'a', 't', 't', 't', 'a', 'a', 't', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'rr9', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl9', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -3127,6 +3210,13 @@ class Level13 extends Level {
     ['8', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
     ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
     ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '51', '14', '14', '51', '51', '51', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
     ['45', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '47', '46']
   ];
 
@@ -3145,7 +3235,6 @@ class Level13 extends Level {
     // level stuff
   }
 }
-
 
 class LevelIntroEnd extends LevelIntro {
   constructor() {
@@ -3184,7 +3273,7 @@ class LevelIntroEnd extends LevelIntro {
 
     setTimeout(() => {
       this.scene.start('LevelLogo');
-    }, 35000);
+    }, 10000);
   }
 
   update(time, delta) { }
@@ -3209,6 +3298,7 @@ const config = {
       gravity: { y: 0 }
     }
   },
+  /*
   scene: [LevelLogo,
      LevelIntro1, Level1,
      LevelIntro2, Level2,
@@ -3221,10 +3311,11 @@ const config = {
      LevelIntro9, Level9,
      LevelIntro10, Level10,
      LevelIntro11, Level11,
-     //LevelIntro12, Level12,
-     //LevelIntro13, Level13
-    ]
-  //scene: [LevelIntro11, Level11]
+     LevelIntro12, Level12,
+     LevelIntro13, Level13
+  ]
+  */
+  scene: [Level1]
 };
 
 const game = new Phaser.Game(config); // main process
