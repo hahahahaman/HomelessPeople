@@ -1910,7 +1910,7 @@ class Level extends Phaser.Scene {
                 // console.log('up');
               } else if (nextAction.state === STATE.CANNON_FIRE) {
                 entity.anims.play('cannon_fire', false);
-                const fireball = this.add.sprite(0, 0, 'fireball', '0');
+                const fireball = this.add.sprite(0, 0, 'fireball_1');
                 setEntityFireball(this, fireball, {
                   x: values.x + values.cannon_x,
                   y: values.y + values.cannon_y,
