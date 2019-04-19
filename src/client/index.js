@@ -2089,7 +2089,7 @@ class LevelLogo extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('heyheyhey', ['assets/audio/heyheyhey.ogg']);
+    this.load.audio('logo', ['assets/audio/logo.ogg']);
     this.load.image('shadybasement', 'assets/shadybasement.png');
   }
 
@@ -2105,12 +2105,12 @@ class LevelLogo extends LevelIntro {
     //   height / 2.0 - this.logo.displayHeight / 2.0
     // );
 
-    const music = this.sound.add('heyheyhey');
+    const music = this.sound.add('logo');
     music.play();
 
     setTimeout(() => {
       this.scene.start('LevelIntro1');
-    }, 5000);
+    }, 3500);
   }
 }
 
