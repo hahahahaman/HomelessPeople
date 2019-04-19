@@ -512,6 +512,32 @@ function isPushablePos(worldX, worldY) {
   return pushable;
 }
 
+function shouldShowGreenPushIndicator(entity, worldX, worldY, dirX, dirY) {
+  if (!isPosInWorld(worldX, worldY)) {
+    return false;
+  }
+
+  let pushable = false;
+  objWorld[worldY][worldX].forEach((obj) => {
+    if ((obj.data.values.type === TYPE.PLAYER && obj !== entity)
+      || obj.data.values.type === TYPE.SPIKE
+      || obj.data.values.type === TYPE.TRASH
+      || obj.data.values.type === TYPE.FIREBALL
+      || obj.data.values.type === TYPE.CANNON
+      || obj.data.values.type === TYPE.COIN) {
+      pushable = true;
+    }
+  });
+  objWorld[worldY + dirY][worldX + dirX].forEach((obj) => {
+    if ((obj.data.values.type === TYPE.PLAYER)
+      || obj.data.values.type === TYPE.TRASH
+      || obj.data.values.type === TYPE.CANNON) {
+      pushable = false;
+    }
+  });
+  return pushable;
+}
+
 function makePushingAction(entity, x, y) {
   // player has to wait for pushing action to complete
   const values = entity.data.values;
@@ -1629,42 +1655,58 @@ class Level extends Phaser.Scene {
         graphics.fillStyle(0x00ff00, 0.5);
         // up
         if (isPushablePos(end_x, end_y - 1)) {
+          if (!shouldShowGreenPushIndicator(selectedEntity, end_x, end_y - 1, 0, -1)) {
+            graphics.fillStyle(0xff0000, 0.5);
+          }
           graphics.fillRect(
             endX - tileSize / 2,
             endY - (3 * tileSize) / 2,
             tileSize,
             tileSize
           );
+          graphics.fillStyle(0x00ff00, 0.5);
         }
 
         // down
         if (isPushablePos(end_x, end_y + 1)) {
+          if (!shouldShowGreenPushIndicator(selectedEntity, end_x, end_y + 1, 0, 1)) {
+            graphics.fillStyle(0xff0000, 0.5);
+          }
           graphics.fillRect(
             endX - tileSize / 2,
             endY + tileSize / 2,
             tileSize,
             tileSize
           );
+          graphics.fillStyle(0x00ff00, 0.5);
         }
 
         // left
         if (isPushablePos(end_x - 1, end_y)) {
+          if (!shouldShowGreenPushIndicator(selectedEntity, end_x - 1, end_y, -1, 0)) {
+            graphics.fillStyle(0xff0000, 0.5);
+          }
           graphics.fillRect(
             endX - (3 * tileSize) / 2,
             endY - tileSize / 2,
             tileSize,
             tileSize
           );
+          graphics.fillStyle(0x00ff00, 0.5);
         }
 
         // right
         if (isPushablePos(end_x + 1, end_y)) {
+          if (!shouldShowGreenPushIndicator(selectedEntity, end_x + 1, end_y, 1, 0)) {
+            graphics.fillStyle(0xff0000, 0.5);
+          }
           graphics.fillRect(
             endX + tileSize / 2,
             endY - tileSize / 2,
             tileSize,
             tileSize
           );
+          graphics.fillStyle(0x00ff00, 0.5);
         }
       }
 
