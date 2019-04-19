@@ -91,6 +91,7 @@ let keys;
 // let debugText;
 let clockText;
 let coinText;
+let stuckText;
 let levelTime = 0.0;
 let pausedText;
 let selectedEntity;
@@ -1040,6 +1041,11 @@ class Level extends Phaser.Scene {
         if (!paused && selectedEntity !== null) {
           if (selectedEntity.getData('actionsDeque').length > 0) {
             selectedEntity.getData('actionsDeque').pop(); // remove from back
+
+            if (selectedEntity.getData('actionsDeque').length === 0) {
+              // can't be stuck anymore
+              stuckText.setVisible(false);
+            }
           }
         }
       })
@@ -1047,6 +1053,9 @@ class Level extends Phaser.Scene {
         // clear actions
         if (!paused && selectedEntity !== null) {
           selectedEntity.getData('actionsDeque').clear();
+
+          // can't be stuck anymore
+          stuckText.setVisible(false);
         }
       })
       .on('keydown-ONE', () => {
@@ -1535,14 +1544,25 @@ class Level extends Phaser.Scene {
           font: '35px Courier',
           fill: '#ffffff'
         })
-        .setScrollFactor(0);
+        .setScrollFactor(0)
+        .setDepth(100);
 
       coinText = this.add
         .text(0, 0, '', {
           font: '20px Courier',
           fill: '#ffffff'
         })
-        .setScrollFactor(0);
+        .setScrollFactor(0)
+        .setDepth(100);
+
+      stuckText = this.add
+        .text(0, 0, 'PRESS C or X to get Unstuck.\nC clears ALL actions.\nX undoes an action.', {
+          font: 'bold 35px Arial',
+          fill: '#fd6a02'
+        })
+        .setScrollFactor(0)
+        .setDepth(1337)
+        .setVisible(false);
     }
   }
 
@@ -1564,7 +1584,6 @@ class Level extends Phaser.Scene {
       restart(this);
       return;
     }
-
 
     const dt = delta / 1000;
     const camera = this.cameras.main;
@@ -1751,7 +1770,7 @@ class Level extends Phaser.Scene {
                       disableEntity(entity);
                     }
                   }
-                } else {
+                } else if ( values.type === TYPE.PLAYER ) {
                   let stall_action = false;
 
                   objWorld[nextY][nextX].forEach((obj) => {
@@ -1767,7 +1786,11 @@ class Level extends Phaser.Scene {
                   if (!isValidMovePos(entity, nextX, nextY)) stall_action = true;
 
                   if (stall_action) {
-
+                    stuckText.setVisible( true );
+                    stuckText.setPosition(
+                      this.cameras.main.width / 2.0 - stuckText.displayWidth / 2.0,
+                      this.cameras.main.height / 2.0 - stuckText.displayHeight / 2.0
+                    );
                     return;
                   }
 
@@ -3022,7 +3045,7 @@ class LevelIntro12 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'Push through.', {
+      .text(0, 0, 'Push through.\nRed doesn\'t mean you can\'t.', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -3250,7 +3273,7 @@ const config = {
      LevelIntro13, Level13
   ]
   */
-  scene: [LevelIntro9, Level9]
+  scene: [Level1]
 };
 
 const game = new Phaser.Game(config); // main process
