@@ -537,7 +537,8 @@ function shouldShowGreenPushIndicator(entity, worldX, worldY, dirX, dirY) {
   objWorld[worldY + dirY][worldX + dirX].forEach((obj) => {
     if ((obj.data.values.type === TYPE.PLAYER)
       || obj.data.values.type === TYPE.TRASH
-      || obj.data.values.type === TYPE.CANNON) {
+      || obj.data.values.type === TYPE.CANNON
+      || obj.data.values.type === TYPE.ROCK) {
       pushable = false;
     }
   });
