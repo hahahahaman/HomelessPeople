@@ -3339,9 +3339,9 @@ const config = {
      LevelIntro10, Level10,
      LevelIntro11, Level11,
      LevelIntro12, Level12,
-     LevelIntro13, Level13
+     LevelIntro13, Level13,
+     LevelIntroEnd
   ]
-  //scene: [Level9]
 };
 
 const game = new Phaser.Game(config); // main process
