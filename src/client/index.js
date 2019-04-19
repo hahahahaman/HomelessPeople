@@ -191,6 +191,7 @@ function setEntity(
     color = 0xffffff,
     state = STATE.IDLE,
     depth = 0,
+    stalled = false,
     actionsDeque = new Deque(),
     idle = () => {},
     timeLeftText = scene.add.text(0, 0, '', {
@@ -220,6 +221,7 @@ function setEntity(
     .set('color', color)
     .set('state', state)
     .set('depth', depth)
+    .set('stalled', stalled)
     .set('actionsDeque', actionsDeque)
     .set('idle', idle)
     .set('timeLeftText', timeLeftText)
@@ -1583,13 +1585,13 @@ class Level extends Phaser.Scene {
         .setDepth(100);
 
       stuckText = this.add
-        .text(0, 0, 'Press C or X to get UNSTUCK.\n\nC clears ALL actions.\nX undoes an action.', {
-          font: 'bold 30px Arial',
+        .text(0, 0, 'Press C or X to get UNSTUCK.\nYour queue of actions led you to be stuck.\n\nC clears ALL actions.\nX undoes an action.', {
+          font: 'bold 20px Arial',
           fill: '#ffffff',
         })
         .setScrollFactor(0)
         .setDepth(1337)
-        .setStroke('#000000', 3)
+        .setStroke('#000000', 4)
         .setVisible(false);
 
     }
@@ -1830,8 +1832,9 @@ class Level extends Phaser.Scene {
 
                   if (!isValidMovePos(entity, nextX, nextY)) stall_action = true;
 
+                  values.stalled = stall_action;
                   if (stall_action) {
-                    stuckText.setVisible( true );
+                    stuckText.setVisible(true);
                     stuckText.setPosition(
                       this.cameras.main.width / 2.0 - stuckText.displayWidth / 2.0,
                       this.cameras.main.height / 2.0 - stuckText.displayHeight / 2.0
@@ -1839,6 +1842,17 @@ class Level extends Phaser.Scene {
 
                     return;
                   }
+
+                  let removeUnstuckText = true;
+                  selectableEntities.forEach((e) => {
+                    if (e !== null) {
+                      if (e.data.values.stalled) removeUnstuckText = false;
+                    }
+                  });
+                  if (removeUnstuckText) {
+                    stuckText.setVisible(false);
+                  }
+
 
                   entityMoveTo(entity, nextX, nextY);
                 }
