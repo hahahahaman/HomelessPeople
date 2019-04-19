@@ -911,6 +911,8 @@ class Level extends Phaser.Scene {
 
   explosionSounds;
 
+  music;
+
   preload() {
     this.load.setBaseURL('./');
     this.load.image('bg', 'assets/wallpaper.jpg');
@@ -989,6 +991,8 @@ class Level extends Phaser.Scene {
     this.load.audio('explosion4', ['assets/audio/explosion4.mp3']);
     this.load.audio('explosion5', ['assets/audio/explosion5.mp3']);
     this.load.audio('explosion6', ['assets/audio/explosion6.mp3']);
+
+    this.load.audio('music', ['assets/audio/caravan.ogg']);
   }
 
   create() {
@@ -1026,6 +1030,9 @@ class Level extends Phaser.Scene {
       this.sound.add('explosion5', { volume }),
       this.sound.add('explosion6', { volume }),
     ];
+
+    this.music = this.sound.add('music', { loop: true });
+    this.music.play();
 
     /*
     Handle Input
@@ -1385,7 +1392,6 @@ class Level extends Phaser.Scene {
     player = this.add.sprite(0, 0, 'homeless_guy');
     player2 = this.add.sprite(0, 0, 'homeless_guy');
 
-
     // initialize all selectable entities
     selectableEntities.push(player, player2);
     selectableEntities.forEach((entity) => {
@@ -1605,7 +1611,10 @@ class Level extends Phaser.Scene {
         win = true;
 
         setTimeout(() => {
-          if (this.nextSceneKey) this.scene.start(this.nextSceneKey);
+          if (this.nextSceneKey){
+            this.music.stop();
+            this.scene.start(this.nextSceneKey);
+          } 
           else restart(this);
         }, 6000);
       }
