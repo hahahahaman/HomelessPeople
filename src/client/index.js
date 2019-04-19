@@ -478,15 +478,20 @@ function isPosInWorld(worldX, worldY) {
 function isValidMovePos(entity, worldX, worldY) {
   if (!isPosInWorld(worldX, worldY)) return false;
 
+  const values = entity.data.values;
+
   let valid = true;
   objWorld[worldY][worldX].forEach((obj) => {
-    if (entity.data.values.type === TYPE.COIN) {
-      if (obj.data.values.type === TYPE.ROCK) valid = false;
+    const objValues = obj.data.values;
+    if (values.type === TYPE.COIN) {
+      if (objValues.type === TYPE.ROCK) valid = false;
+    } else if (values.type === TYPE.FIREBALL) {
+      if (objValues.type === TYPE.ROCK) valid = false;
     } else if (
-      obj.data.values.type === TYPE.ROCK
-        || obj.data.values.type === TYPE.PLAYER
-        || obj.data.values.type === TYPE.TRASH
-        || obj.data.values.type === TYPE.CANNON
+      objValues.type === TYPE.ROCK
+        || objValues.type === TYPE.PLAYER
+        || objValues.type === TYPE.TRASH
+        || objValues.type === TYPE.CANNON
     ) {
       valid = false;
     }
@@ -1730,16 +1735,15 @@ class Level extends Phaser.Scene {
                         hit = true;
                         predisableEntity(obj);
                         makeExplodeAction(obj);
-                        console.log('player hit')
-                      }
-                      if (hit) {
-                        predisableEntity(entity);
-                        makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
-                        entity.setTexture('explosion_s', '0');
+                        console.log('player hit');
                       }
                     }
                   });
-                  if (!hit) {
+                  if (hit) {
+                    predisableEntity(entity);
+                    makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
+                    entity.setTexture('explosion_s', '0');
+                  } else {
                     if (isPosInWorld(nextX, nextY)) {
                       entityMoveTo(entity, nextX, nextY);
                       makeFireballAction(entity);
@@ -1917,6 +1921,32 @@ class Level extends Phaser.Scene {
           values.idle();
           if (values.type === TYPE.FIREBALL) {
             console.log('fireball');
+            let hit = false;
+            objWorld[values.y][values.x].forEach((obj) => {
+              const obj_val = obj.data.values;
+              if (obj !== entity) {
+                if (obj_val.type === TYPE.TRASH
+                  || obj_val.type === TYPE.COIN
+                  || obj_val.type === TYPE.CANNON
+                  || (obj_val.type === TYPE.FIREBALL && obj_val.state !== STATE.EXPLODE_SMALL)) {
+                  disableEntity(obj);
+                  hit = true;
+                  console.log(obj_val.type);
+                } else if (obj_val.type === TYPE.ROCK) {
+                  hit = true;
+                } else if (obj_val.type === TYPE.PLAYER) {
+                  hit = true;
+                  predisableEntity(obj);
+                  makeExplodeAction(obj);
+                  console.log('player hit');
+                }
+              }
+            });
+            if (hit) {
+              predisableEntity(entity);
+              makeExplodeAction(entity, STATE.EXPLODE_SMALL, 0.46);
+              entity.setTexture('explosion_s', '0');
+            }
           }
         }
 
@@ -2983,7 +3013,7 @@ class LevelIntro12 extends LevelIntro {
   }
 
   preload() {
-    this.load.audio('going', ['assets/audio/hey_you_going.ogg']);
+    this.load.audio('going', ['assets/audio/hey_youre_going.ogg']);
   }
 
   create() {
@@ -2991,7 +3021,7 @@ class LevelIntro12 extends LevelIntro {
     const height = this.cameras.main.height;
 
     this.title = this.add
-      .text(0, 0, 'What Am I Going to Do?', {
+      .text(0, 0, 'Push through.', {
         font: '20px Courier',
         fill: '#ffffff',
         stroke: '#000000',
@@ -3004,7 +3034,7 @@ class LevelIntro12 extends LevelIntro {
       height / 2.0 - this.title.displayHeight / 2.0
     );
 
-    const music = this.sound.add('going');
+    const music = this.sound.add('going', { volume });
     music.play();
 
     setTimeout(() => {
@@ -3015,6 +3045,32 @@ class LevelIntro12 extends LevelIntro {
 }
 
 class Level12 extends Level {
+  // push fire ball into other cannons
+  worldArray = [
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 'a', 'a', 'w', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'a', 'a', 'rl1', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'a', 'w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'a', 'a', 'ru9', 'w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', '2', '1', 'a', 'w', 'a', 'a', 'a', 'a', 'w'],
+    ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
+  ];
+
+  bgWorldArray = [
+    [ '8', '10', '10', '10', '10', '10', '10', '10', '10', '9'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['11', '14', '14', '14', '14', '14', '14', '14', '14', '48'],
+    ['45', '47', '47', '47', '47', '47', '47', '47', '47', '46']
+  ];
 
   constructor() {
     super({ key: 'Level12' });
@@ -3167,6 +3223,7 @@ const config = {
       gravity: { y: 0 }
     }
   },
+  /*
   scene: [LevelLogo,
      LevelIntro1, Level1,
      LevelIntro2, Level2,
@@ -3182,7 +3239,8 @@ const config = {
      //LevelIntro12, Level12,
      //LevelIntro13, Level13
     ]
-  //scene: [LevelIntro11, Level11]
+    */
+  scene: [LevelIntro12, Level12]
 };
 
 const game = new Phaser.Game(config); // main process
