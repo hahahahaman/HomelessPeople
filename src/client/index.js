@@ -2891,10 +2891,10 @@ class Level9 extends Level {
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 't', '1', '2', 't', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
     ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 't', 't', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
     ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
-    ['w', 'c', 'w', 'rr4', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl4', 'w', 'c', 'w'],
+    ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'rl4', 'w', 'a', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'c', 'w'],
     ['w', 'c', 'w', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'w', 'a', 'w'],
-    ['w', 'a', 'w', 'a', 'ru2', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'ru2', 'a', 'a', 'a', 'c', 'w'],
+    ['w', 'a', 'w', 'a', 'a', 'a', 'a', 'ru2', 'a', 'a', 'ru2', 'a', 'a', 'a', 'a', 'a', 'c', 'w'],
     ['w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w', 'w'],
   ];
 
@@ -3301,7 +3301,6 @@ const config = {
       gravity: { y: 0 }
     }
   },
-  /*
   scene: [LevelLogo,
      LevelIntro1, Level1,
      LevelIntro2, Level2,
@@ -3317,8 +3316,7 @@ const config = {
      LevelIntro12, Level12,
      LevelIntro13, Level13
   ]
-  */
-  scene: [Level1]
+  //scene: [Level9]
 };
 
 const game = new Phaser.Game(config); // main process
