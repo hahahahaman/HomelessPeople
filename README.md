@@ -1,6 +1,9 @@
 # Homeless People
 
-[repl.it Game jam](https://repl.it/talk/challenge/Were-hosting-a-Game-Jam/11432)
+![Tutorial](pics/tutorial.jpg)
+
+
+Created for the [repl.it Game jam](https://repl.it/talk/challenge/Were-hosting-a-Game-Jam/11432).
 
 ## Run
 
@@ -15,8 +18,8 @@ npm start
 
 ## Idea:
 
-Homeless people fighting corporate monsters for cash.
+Homeless people getting money to invest into Bitconnect.
 
-## Useful
+<!-- ## Useful -->
 
-[Phaser template](https://github.com/photonstorm/phaser3-project-template)
+<!-- [Phaser template](https://github.com/photonstorm/phaser3-project-template) -->
