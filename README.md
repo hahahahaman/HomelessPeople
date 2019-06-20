@@ -2,7 +2,6 @@
 
 ![Tutorial](pics/tutorial.jpg)
 
-
 Created for the [repl.it Game jam](https://repl.it/talk/challenge/Were-hosting-a-Game-Jam/11432).
 
 ## Run
